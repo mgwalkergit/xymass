@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/__init__.py
+src/xymass.py
+src/xymass.egg-info/PKG-INFO
+src/xymass.egg-info/SOURCES.txt
+src/xymass.egg-info/dependency_links.txt
+src/xymass.egg-info/top_level.txt

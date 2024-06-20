@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: xymass
+Version: 0.0.2
+Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models
+Author-email: "Matthew G. Walker" <mgwalker@cmu.edu>
+Project-URL: Homepage, https://github.com/pypa/sampleproject
+Project-URL: Issues, https://github.com/pypa/sampleproject/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# xymass package
+
+This is a package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal).

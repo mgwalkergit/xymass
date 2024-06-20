@@ -1,0 +1,18 @@
+[project]
+name = "xymass"
+version = "0.0.2"
+authors = [
+  { name="Matthew G. Walker", email="mgwalker@cmu.edu" },
+]
+description = "package to generate random samples of 2D position and mass from common stellar density and IMF models"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/pypa/sampleproject"
+Issues = "https://github.com/pypa/sampleproject/issues"
