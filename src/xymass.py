@@ -4,7 +4,7 @@ import scipy.special
 import scipy.optimize
 import warnings
 
-def sample_r2d(size,**params):#samples from flattened plummer, exponential, or (not flattened) uniform 2d distributions
+def sample_r2d(size,model,**params):#samples from flattened plummer, exponential, or (not flattened) uniform 2d distributions
     
     class r2d:
         def __init__(self,r_ell=None,x=None,y=None,ellipticity=None,position_angle=None,r_scale=None,model=None,alpha=None,beta=None,gamma=None,func=None):
@@ -42,9 +42,9 @@ def sample_r2d(size,**params):#samples from flattened plummer, exponential, or (
         warnings.warn('ellipticity and position_angle not specified, assuming ellipticity=0')
     if ((params['ellipticity']<0.)|(params['ellipticity']>1.)):
         raise ValueError('ellipticity = '+str(params['ellipticity'])+' is invalid value, must be between 0 and 1')
-    if ((params['model']=='uni')&(params['ellipticity']!=0)):
+    if ((model=='uni')&(params['ellipticity']!=0)):
         warnings.warn('specified uniform distribution with nonzero ellipticity!')
-    if params['model']=='2bg':
+    if model=='2bg':
         if 'beta' not in params:
             raise ValueError('must specify beta and gamma for 2bg model')
         if 'gamma' not in params:
@@ -53,14 +53,14 @@ def sample_r2d(size,**params):#samples from flattened plummer, exponential, or (
     flat_x,flat_y=flatten_2d(size,params)
     uni=np.random.uniform(low=0.,high=1.,size=size)
     
-    if params['model']=='plum':
+    if model=='plum':
         bigsigma0=size/np.pi/params['r_scale']**2
         def func(x):
             return bigsigma0/(1+x**2)**2
         r=np.sqrt(uni/(1.-uni))#elliptical radius
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=params['model'],func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
 
-    if params['model']=='exp':
+    if model=='exp':
         bigsigma0=size/2/np.pi/params['r_scale']**2
         def func(x):
             return bigsigma0*np.exp(-x)
@@ -72,9 +72,9 @@ def sample_r2d(size,**params):#samples from flattened plummer, exponential, or (
         for i in range(0,len(uni)):
             r.append(scipy.optimize.brentq(findbigr_exp,low0,high0,args=uni[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True))#elliptical radius
         r=np.array(r)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=params['model'],func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
 
-    if params['model']=='2bg':
+    if model=='2bg':
         bigsigma0=size*(params['beta']-3)*scipy.special.gamma((params['beta']-params['gamma'])/2)/4/np.sqrt(np.pi)/scipy.special.gamma((3-params['gamma'])/2)/scipy.special.gamma(params['beta']/2)/params['r_scale']**2
         def func(x):
             return bigsigma0*x**(1-params['beta'])*scipy.special.hyp2f1((params['beta']-1)/2,(params['beta']-params['gamma'])/2,params['beta']/2,-1/x**2)            
@@ -86,14 +86,14 @@ def sample_r2d(size,**params):#samples from flattened plummer, exponential, or (
         for i in range(0,len(uni)):
             r.append(scipy.optimize.brentq(findbigr_2bg,low0,high0,args=(uni[i],params['beta'],params['gamma']),xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True))#eliptical radius
         r=np.array(r)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=params['model'],beta=params['beta'],gamma=params['gamma'],func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,beta=params['beta'],gamma=params['gamma'],func=func)
     
-    if params['model']=='uni':
+    if model=='uni':
         bigsigma0=size/np.pi/params['r_scale']**2
         def func(x):
             return bigsigma0*x/x
         r=np.sqrt(uni)#elliptical radius (can in practice be elliptical if nonzero ellipticity is specified)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=params['model'],func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
 
 
 def sample_imf(size,model,**params):
