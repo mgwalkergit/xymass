@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
-import scipy.special
 import scipy.optimize
+import scipy.special
 import warnings
 
 def sample_r2d(size,model,**params):#samples from flattened plummer, exponential, or (not flattened) uniform 2d distributions
@@ -39,7 +39,8 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
     if ((not 'ellipticity' in params)&(not 'position_angle' in params)):
         params['ellipticity']=0.
         params['position_angle']=0.
-        warnings.warn('ellipticity and position_angle not specified, assuming ellipticity=0')
+        if not model=='uni':
+            warnings.warn('ellipticity and position_angle not specified, assuming ellipticity=0')
     if ((params['ellipticity']<0.)|(params['ellipticity']>1.)):
         raise ValueError('ellipticity = '+str(params['ellipticity'])+' is invalid value, must be between 0 and 1')
     if ((model=='uni')&(params['ellipticity']!=0)):
