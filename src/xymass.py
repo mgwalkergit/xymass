@@ -994,7 +994,7 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
         params['binary_model']='user'
     if not 'f_binary' in params:
         params['f_binary']=1.
-
+        
     n_object=len(object_xyz)
     
     is_binary=np.zeros(n_object,dtype='bool')
@@ -1003,18 +1003,16 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
     n_binary=is_binary.sum()
     n_single=n_object-n_binary
 
-    m_min=0.1 #Msun, minimum mass of star in binary system
-    
     if params['binary_model']=='Raghavan2010':
 
-        q=np.random.uniform(size=n_object,low=m_min/mass_primary.value,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution subject to constraint M_secondary > M_min
+        q=np.random.uniform(size=n_object,low=params['m_min']/mass_primary.value,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution subject to constraint M_secondary > M_min
         period=10.**sample_normal_truncated(size=n_object,loc=5.03,scale=2.28,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=np.random.uniform(size=n_object,low=0.,high=1.)
         #eccentricity=10.**sample_normal_truncated(size=n_binary,loc=-0.3,scale=1.,min_value=-np.inf,max_value=0.) #array of orbital eccentricity, sampled from truncated log-normal distribution
         eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 
     elif params['binary_model']=='DM91':
-        q=sample_normal_truncated(size=n_object,loc=0.23,scale=0.42,min_value=m_min/mass_primary.value,max_value=1.)
+        q=sample_normal_truncated(size=n_object,loc=0.23,scale=0.42,min_value=params['m_min']/mass_primary.value,max_value=1.)
         period=10.**sample_normal_truncated(size=n_object,loc=4.8,scale=2.3,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
         long_period=np.where(period*365.24>1000.*u.day)[0]
