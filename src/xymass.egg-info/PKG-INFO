@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: xymass
-Version: 1.0.0
-Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models
+Version: 1.0.7
+Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models, including binary companions
 Author-email: "Matthew G. Walker" <mgwalker@cmu.edu>
 Project-URL: Homepage, https://github.com/mgwalkergit/xymass
 Project-URL: Issues, https://github.com/mgwalkergit/xymass/issues
@@ -11,6 +11,10 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: astropy
+Requires-Dist: matplotlib
 
 # xymass
 
@@ -37,9 +41,11 @@ The uniform model has the form $\Sigma(R)=\Sigma_0$.
 
 The 2bg model has the form $\Sigma(R)=2\int_{R}^{\infty}\frac{r \nu(r)dr}{\sqrt{r^2-R^2}}$, where the 3D profile is $\nu(r)=\frac{\nu_0}{(r/r_s)^{\gamma}[1+r^2/r_s^2]^{(\beta-\gamma)/2}}$.
 
-# Available Models for initial mass function
+For all models, the constant $\Sigma_0$ is determined by choice of number of objects and other model parameters (e.g., scale radius and other shape parameters if applicable).
 
-Options for modeling the IMF are Salpeter ('salpeter'), Kroupa ('kroupa'), broken power law ('bpl') and log-normal ('lognormal').  
+# Available Models for stellar mass function
+
+Options for modeling the stellar IMF are Salpeter ('salpeter'), Kroupa ('kroupa'), broken power law ('bpl') and log-normal ('lognormal').  
 
 The Salpeter model has the form $dN/dM=k M^{-\alpha}$.
 
@@ -70,11 +76,11 @@ If using the '2bg' model (alpha/beta/gamma model with alpha=2), must specify bet
 ```sample_xy=xymass.sample_r2d(1000,'2bg',r_scale=5.3,beta=5.4,gamma=0.9,ellipticity=0.4,position_angle=35)```
 
 
- In order to sample stellar initial masses, specify sample size and analytic model ('salpeter', 'kroupa', 'lognormal', 'bpl'):
+ In order to sample stellar masses, specify sample size and analytic model ('salpeter', 'kroupa', 'lognormal', 'bpl'):
 
  ```sample_mass=xymass.sample_imf(1000,'kroupa')```
 
-The returned object contains sampled masses, model parameters (including normalization constants), and a function that returns the expected probability density, dN/dmass (normalized so that integral over dN/dmass between m_min and m_max is 1), at a given mass value.
+The returned object contains sampled masses, model parameters (including normalization constants), and a function that returns the expected probability density, dN/dmass (normalized so that integral over dN/dmass between m_min and m_max is 1), at a given mass value.  
 
 Default values of model parameters are given below.  Different values can be specified when calling, e.g.
 
@@ -96,4 +102,7 @@ For examples of sampling 2D positions, see the [notebook](examples/xymass_sample
 
 For examples of sampling initial masses, see the [notebook](examples/xymass_sample_imf_example.ipynb) in the examples folder.
 
+For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/xymass_sample_orbit_example.ipynb) in the examples folder.
+
 # Acknowledgement
+

@@ -12,7 +12,7 @@ import time
 def sample_r2d(size,model,**params):#samples from flattened plummer, exponential, or (not flattened) uniform 2d distributions
     
     class r2d:
-        def __init__(self,r_ell=None,x=None,y=None,r_xyz=None,ellipticity=None,position_angle=None,r_scale=None,model=None,alpha=None,beta=None,gamma=None,func=None,f_binary=None):
+        def __init__(self,r_ell=None,x=None,y=None,r_xyz=None,ellipticity=None,position_angle=None,r_scale=None,model=None,alpha=None,beta=None,gamma=None,func=None,rhalf_2d=None):
             self.r_ell=r_ell
             self.x=x
             self.y=y
@@ -25,7 +25,7 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
             self.beta=beta
             self.gamma=gamma
             self.func=func
-            self.f_binary=f_binary
+            self.rhalf_2d=rhalf_2d
 
     def flatten_2d(size,params):#computes x,y coordinates (units of r_scale) given ellipticity and position angle (units of R/r_scale**2)
         phi=2.*np.pi*np.random.uniform(low=0.,high=1.,size=size)#azimuthal angle in circular coordinates
@@ -62,14 +62,20 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
     uni=np.random.uniform(low=0.,high=1.,size=size)
     
     if model=='plum':
+        
         bigsigma0=size/np.pi/params['r_scale']**2
+        rhalf_2d=params['r_scale']
+        
         def func(x):
             return bigsigma0/(1+x**2)**2
         r=np.sqrt(uni/(1.-uni))#elliptical radius
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func,rhalf_2d=rhalf_2d)
 
     if model=='exp':
+        
         bigsigma0=size/2/np.pi/params['r_scale']**2
+        rhalf_2d=1.67835*params['r_scale']
+
         def func(x):
             return bigsigma0*np.exp(-x)
         def findbigr_exp(x,uni):
@@ -80,10 +86,19 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         for i in range(0,len(uni)):
             r.append(scipy.optimize.brentq(findbigr_exp,low0,high0,args=uni[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True))#elliptical radius
         r=np.array(r)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func,rhalf_2d=rhalf_2d)
 
     if model=='2bg':
+        
         bigsigma0=size*(params['beta']-3)*scipy.special.gamma((params['beta']-params['gamma'])/2)/4/np.sqrt(np.pi)/scipy.special.gamma((3-params['gamma'])/2)/scipy.special.gamma(params['beta']/2)/params['r_scale']**2
+
+        def rootfind_2bg_2d(x,beta,gamma):
+            return 0.5-np.sqrt(np.pi)*scipy.special.gamma((beta-gamma)/2)/2/scipy.special.gamma(beta/2)/scipy.special.gamma((3-gamma)/2)*x**(3-beta)*scipy.special.hyp2f1((beta-3)/2,(beta-gamma)/2,beta/2,-1/x**2)
+
+        low0=1.e-10
+        high0=1.e+10
+        rhalf_2d=params['r_scale']*scipy.optimize.brentq(rootfind_2bg_2d,low0,high0,args=(params['beta'],params['gamma']),xtol=1.e-12,rtol=1.e-6,maxiter=1000,full_output=False,disp=True)
+
         def func(x):
             return bigsigma0*x**(1-params['beta'])*scipy.special.hyp2f1((params['beta']-1)/2,(params['beta']-params['gamma'])/2,params['beta']/2,-1/x**2)            
         def findbigr_2bg(x,uni,beta,gamma):
@@ -94,15 +109,16 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         for i in range(0,len(uni)):
             r.append(scipy.optimize.brentq(findbigr_2bg,low0,high0,args=(uni[i],params['beta'],params['gamma']),xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True))#eliptical radius
         r=np.array(r)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,beta=params['beta'],gamma=params['gamma'],func=func)
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,beta=params['beta'],gamma=params['gamma'],func=func,rhalf_2d=rhalf_2d)
     
     if model=='uni':
         bigsigma0=size/np.pi/params['r_scale']**2
+        rhalf_2d=np.sqrt(0.5)*params['r_scale']
+        
         def func(x):
             return bigsigma0*x/x
         r=np.sqrt(uni)#elliptical radius (can in practice be elliptical if nonzero ellipticity is specified)
-        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func)
-
+        return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func,rhalf_2d=rhalf_2d)
 
 def sample_imf(size,model,**params):
     class imf:
@@ -1001,10 +1017,10 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
         q=sample_normal_truncated(size=n_object,loc=0.23,scale=0.42,min_value=m_min/mass_primary.value,max_value=1.)
         period=10.**sample_normal_truncated(size=n_object,loc=4.8,scale=2.3,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
-        long_period=np.where(period*365.24>1000.)[0]
+        long_period=np.where(period*365.24>1000.*u.day)[0]
         eccentricity_thermal=sample_thermal(size=len(long_period)) #sample thermal distribution for long periods
         eccentricity[long_period]=eccentricity_thermal
-        eccentricity[period*365.24<12.]=0. #eccentricity=0 for P<12 days
+        eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 
     else:
         q=params['q']
@@ -1056,93 +1072,3 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
     return r2d_with_binaries(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),binary_model=params['binary_model'])
 
 
-generate_r2d_with_binaries=True
-if generate_r2d_with_binaries:
-
-    n_object=10000
-
-    r2d=sample_r2d(size=n_object,model='plum',r_scale=10000.*u.AU) #r_scale must be in A.U.
-    mf=sample_imf(size=n_object,model='kroupa')
-    #r2d_with_binaries=add_binaries(r2d.r_xyz,mf.mass*u.M_sun,f_binary=0.32,binary_model='Raghavan2010') #need to put in raghavan details and give options
-    #r2d_with_binaries=add_binaries(r2d.r_xyz,mf.mass,f_binary=0.32,binary_model='DM91') #need to put in raghavan details and give options
-
-    q=np.random.uniform(size=n_object,low=0.1/mf.mass,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution subject to constraint M_2 > 0.1 Msun
-    period=10.**sample_normal_truncated(size=n_object,loc=5.03,scale=2.28,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
-    eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
-
-    r2d_with_binaries=add_binaries(r2d.r_xyz,mf.mass*u.M_sun,f_binary=0.32,q=q,period=period,eccentricity=eccentricity) #need to put in raghavan details and give options
-    x=r2d_with_binaries.r_xyz.T[0]
-    y=r2d_with_binaries.r_xyz.T[1]
-    plt.scatter(x,y,s=1)
-    plt.show()
-    np.pause()
-
-
-
-    
-animate=True
-
-#define sample size (number of binary systems)
-
-n_binary=10000
-
-#sample IMF for primaries  
-mass_primary=sample_imf(size=n_binary,model='kroupa').mass*u.M_sun #draw sample from adopted IMF for primaries
-
-#sample m_secondary / m_primary from uniform distribution
-mass_ratio=np.random.uniform(size=n_binary,low=0.,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution
-
-#sample (truncated) log-normal period distribution
-period=10.**sample_normal_truncated(size=n_binary,loc=1.,scale=1.,min_value=-np.inf,max_value=np.inf)*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
-
-#sample (truncated) log-normal eccentricity distribution
-eccentricity=10.**sample_normal_truncated(size=n_binary,loc=-0.3,scale=1.,min_value=-np.inf,max_value=0.) #array of orbital eccentricity, sampled from truncated log-normal distribution
-
-#sample time of observation, as a fraction of the orbital period (sampling uniform distribution here)
-f_period=np.random.uniform(size=n_binary,low=0.,high=1.) #array of orbital phase, time / period
-
-#sample inclination angle
-inclination=sample_inclination(size=n_binary)*u.rad #array of inclination angle (radians), inclination=0 for observer along +z axis, inclination=pi/2 for observer in xy plane, allowed from 0 to 2*pi to allow for full range of parity.
-
-#sample longitude of ascending node
-longitude=np.random.uniform(size=n_binary,low=0,high=2.*np.pi)*u.rad #array of longitude of ascending node (radians), longitude=0 if observer is along +x axis, longitude=pi/2 if observer is along +y axis
-
-t1=time.perf_counter()
-orbit_snapshot=sample_orbit_2body(f_period,period=period,eccentricity=eccentricity,mass_primary=mass_primary,mass_ratio=mass_ratio,longitude=longitude,inclination=inclination)
-t2=time.perf_counter()
-print(t2-t1)
-
-fig=plt.figure(1)
-ax1=fig.add_subplot(221)
-ax2=fig.add_subplot(222)
-ax3=fig.add_subplot(223)
-ax4=fig.add_subplot(224)
-fig.subplots_adjust(wspace=0.5,hspace=0.5)
-ax1.hist(np.log10(mass_primary.value),bins=50,density=True)
-ax2.hist(np.log10(period.value),bins=50,density=True)
-ax3.hist(eccentricity,bins=50,density=True)
-ax4.hist(orbit_snapshot.v_obs_xyz.T[2].value,bins=50,density=True,range=[-5,5])
-ax1.set_xlabel(r'$\log_{10}[M_{\rm primary}/M_{\odot}]$')
-ax2.set_xlabel(r'$\log_{10}[\mathrm{period/yr}]$')
-ax3.set_xlabel('eccentricity')
-ax4.set_xlabel(r'$v_{\rm LOS}$ [km/s]')
-for ax in [ax1,ax2,ax3,ax4]:
-    ax.set_ylabel('probability')
-plt.show()
-plt.close()
-
-if animate:
-    #define parameters of a single orbit
-    period=1.*u.yr #yr
-    eccentricity=0.6
-    mass_primary=1.*u.M_sun #M_sun
-    mass_ratio=0.2 #M_secondary/M_primary
-    longitude=15.*np.pi/180.*u.rad #longitude of ascending node, radians
-    inclination=81.*np.pi/180.*u.rad #inclination angle, radian
-
-    #sample f_period = time / period uniformly over one full period
-    f_period=np.linspace(0,1,100)
-    sample_orbit=sample_orbit_2body(f_period,period=period,eccentricity=eccentricity,mass_primary=mass_primary,mass_ratio=mass_ratio,longitude=longitude,inclination=inclination)
-
-    animation_2body_r(sample_orbit,animation_filename=None)
-    animation_2body_v(sample_orbit,animation_filename=None)

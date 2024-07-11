@@ -86,5 +86,7 @@ For examples of sampling initial masses, see the [notebook](examples/xymass_samp
 
 For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/xymass_sample_orbit_example.ipynb) in the examples folder.
 
+For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/xymass_sample_r2d_with_binaries_example.ipynb) in the examples folder.
+
 # Acknowledgement
 
