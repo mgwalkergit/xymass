@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: xymass
-Version: 1.0.7
+Version: 1.0.8
 Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models, including binary companions
 Author-email: "Matthew G. Walker" <mgwalker@cmu.edu>
 Project-URL: Homepage, https://github.com/mgwalkergit/xymass
@@ -103,6 +103,8 @@ For examples of sampling 2D positions, see the [notebook](examples/xymass_sample
 For examples of sampling initial masses, see the [notebook](examples/xymass_sample_imf_example.ipynb) in the examples folder.
 
 For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/xymass_sample_orbit_example.ipynb) in the examples folder.
+
+For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/xymass_sample_r2d_with_binaries_example.ipynb) in the examples folder.
 
 # Acknowledgement
 
