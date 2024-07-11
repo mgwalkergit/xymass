@@ -1,6 +1,6 @@
 [project]
 name = "xymass"
-version = "0.0.8"
+version = "1.0.0"
 authors = [
   { name="Matthew G. Walker", email="mgwalker@cmu.edu" },
 ]
@@ -14,5 +14,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/mgwalkergit/xymass"
+Issues = "https://github.com/mgwalkergit/xymass/issues"
