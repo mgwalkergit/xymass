@@ -994,6 +994,8 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
         params['binary_model']='user'
     if not 'f_binary' in params:
         params['f_binary']=1.
+    if not 'm_min' in params:
+        params['m_min']=np.min(mass_primary.value)
         
     n_object=len(object_xyz)
     
