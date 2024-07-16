@@ -82,11 +82,14 @@ In order to replace some fraction f_binary of sampled coordinates with positions
 
  ```sample_xy_withbinaries=xymass.add_binaries(sample_xy.r_xyz,sample_mass.mass*u.M_sun,f_binary=f_binary,m_min=m_min,binary_model='Raghavan2010')```
 
-The positions of the stars within the binary systems are sampled by drawing from a 2-body Keplerian orbit (randomly-drawn physical and observational parameters), with binary orbital parameters \
-specified either by the user (see examples) or,as here, according to the parameters inferred by Raghavan et al. 2010 (Duquennoy & Mayor 1991 also available as 'DM91).  \
-m_min should be set to the minimum mass allowed for the secondary (e.g., hydrogen-burning limit).  
+The positions of the stars within the binary systems are sampled by drawing from a 2-body Keplerian orbit (randomly-drawn physical and observational parameters), with binary orbital parameters specified either by the user (see examples) or,as here, according to the parameters inferred by Raghavan et al. 2010 (Duquennoy & Mayor 1991 also available as 'DM91).  m_min should be set to the minimum mass allowed for the secondary (e.g., hydrogen-burning limit).  
 
+In order to sample phase-space coordinates (with respect to center of mass) of binary companions directly:
 
+ ```sample_orbit=xymass.sample_orbit_2body(f_period,period=period,eccentricity=eccentricity,mass_primary=mass_primary,mass_ratio=mass_ratio,longitude=longitude,inclination=inclination)```
+
+where f_period specifies the time of observation as a fraction of the orbital period, and the other parameters specify the orbital and observational parameters (all except f_period, eccentricity and mass ratio must have units specified via astropy.units).  All can be scalars or numpy arrays.   
+ 
 # Examples 
 
 For examples of sampling 2D positions, see the [notebook](examples/xymass_sample_r2d_example.ipynb) in the examples folder.
