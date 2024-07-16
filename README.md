@@ -1,6 +1,6 @@
 # xymass
 
-A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal).
+A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal), including physically-calculated binary star components.
 
 Author: Matthew G. Walker (2024) 
 
@@ -51,14 +51,14 @@ The model scale radius is 1 by default.  For other values, specify as
 
 ```sample_xy=xymass.sample_r2d(1000,'plum',r_scale=1.9,ellipticity=0.4,position_angle=35)```
 
-The returned object contains sampled positions x, y, 'elliptical' radii (semi-major axis of ellipse centered on origin that passes through sampled position), model parameters, and a function that returns the expected number density at a given elliptical radius.
+The returned object contains sampled positions x, y, z (although the 'z' component is zero by construction) 'elliptical' radii (semi-major axis of ellipse centered on origin that passes through sampled position), model parameters, and a function that returns the expected number density at a given elliptical radius.
 
 If using the '2bg' model (alpha/beta/gamma model with alpha=2), must specify beta and gamma, e.g.:
 
 ```sample_xy=xymass.sample_r2d(1000,'2bg',r_scale=5.3,beta=5.4,gamma=0.9,ellipticity=0.4,position_angle=35)```
 
 
- In order to sample stellar masses, specify sample size and analytic model ('salpeter', 'kroupa', 'lognormal', 'bpl'):
+In order to sample stellar masses, specify sample size and analytic model ('salpeter', 'kroupa', 'lognormal', 'bpl'):
 
  ```sample_mass=xymass.sample_imf(1000,'kroupa')```
 
@@ -77,6 +77,15 @@ Kroupa: alpha1=0.3, alpha2=1.3, alpha3=2.3, m1_break=0.08, m2_break=0.5
 broken power law: alpha1=1.3, alpha2=2.3, m_break=0.5
 
 log-normal: mean=0.08, std=0.7 
+
+In order to replace some fraction f_binary of sampled coordinates with positions of individual members of binary star systems:
+
+ ```sample_xy_withbinaries=xymass.add_binaries(sample_xy.r_xyz,sample_mass.mass*u.M_sun,f_binary=f_binary,m_min=m_min,binary_model='Raghavan2010')```
+
+The positions of the stars within the binary systems are sampled by drawing from a 2-body Keplerian orbit (randomly-drawn physical and observational parameters), with binary orbital parameters \
+specified either by the user (see examples) or,as here, according to the parameters inferred by Raghavan et al. 2010 (Duquennoy & Mayor 1991 also available as 'DM91).  \
+m_min should be set to the minimum mass allowed for the secondary (e.g., hydrogen-burning limit).  
+
 
 # Examples 
 
