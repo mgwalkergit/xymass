@@ -198,7 +198,7 @@ def sample_imf(size,model,**params):
         if params['m1_break']>params['m2_break']:
             raise ValueError ('Kroupa IMF: m1_break cannot be larger than m2_break')
         
-        mass=[]
+        mass=np.zeros(len(ran1),dtype=float)
 
         #get normalization constant for each of three pieces
         k2_over_k1=params['m1_break']**(params['alpha2']-params['alpha1'])
@@ -273,18 +273,17 @@ def sample_imf(size,model,**params):
         f2=k2*piece2
         f3=k3*piece3
 
-        for i in range(0,len(ran1)):
-                
-            if ran1[i]<f1:
-                mass.append((params['m_min']**(1.-params['alpha1'])+ran1[i]*(1.-params['alpha1'])/k1)**(1./(1.-params['alpha1'])))
-            elif ((ran1[i]>=f1)&(ran1[i]<(f1+f2))):
-                mass.append((m0_2**(1.-params['alpha2'])+(1.-params['alpha2'])/k2*(ran1[i]-f1))**(1./(1.-params['alpha2'])))
-            elif ran1[i]>=(f1+f2):
-                mass.append((m0_3**(1.-params['alpha3'])+(1.-params['alpha3'])/k3*(ran1[i]-f1-f2))**(1./(1.-params['alpha3'])))
-            else:
-                raise ValueError('something wrong in sampling Kroupa IMF')
-                
-        mass=np.array(mass)
+        first=np.where(ran1<f1)[0]
+        second=np.where((ran1>=f1)&(ran1<f1+f2))[0]
+        third=np.where(ran1>=f1+f2)[0]
+        bad=np.where(ran1>f1+f2+f3)[0]
+
+        if len(bad)>0:
+            raise ValueError('something wrong in sampling Kroupa IMF')
+            
+        mass[first]=(params['m_min']**(1.-params['alpha1'])+ran1[first]*(1.-params['alpha1'])/k1)**(1./(1.-params['alpha1']))
+        mass[second]=(m0_2**(1.-params['alpha2'])+(1.-params['alpha2'])/k2*(ran1[second]-f1))**(1./(1.-params['alpha2']))
+        mass[third]=(m0_3**(1.-params['alpha3'])+(1.-params['alpha3'])/k3*(ran1[third]-f1-f2))**(1./(1.-params['alpha3']))
 
         def kroupa_func(x):
             if ((type(x) is list)|(type(x) is np.ndarray)):
@@ -325,7 +324,7 @@ def sample_imf(size,model,**params):
         if not 'm_break' in params:
             params['m_break']=0.5
             
-        mass=[]
+        mass=np.zeros(len(ran1),dtype=float)
 
         #get normalization constant for each of three pieces
         k2_over_k1=params['m_break']**(params['alpha2']-params['alpha1'])
@@ -361,17 +360,16 @@ def sample_imf(size,model,**params):
         f1=k1*piece1
         f2=k2*piece2
 
-        for i in range(0,len(ran1)):
-                
-            if ran1[i]<f1:
-                mass.append((params['m_min']**(1.-params['alpha1'])+ran1[i]*(1.-params['alpha1'])/k1)**(1./(1.-params['alpha1'])))
-            elif ((ran1[i]>=f1)&(ran1[i]<(f1+f2))):
-                mass.append((m0_2**(1.-params['alpha2'])+(1.-params['alpha2'])/k2*(ran1[i]-f1))**(1./(1.-params['alpha2'])))
-            else:
-                raise ValueError('something wrong in sampling BPL IMF')
-                
-        mass=np.array(mass)
+        first=np.where(ran1<f1)[0]
+        second=np.where((ran1>=f1)&(ran1<f1+f2))[0]
+        bad=np.where(ran1>f1+f2)[0]
 
+        if len(bad)>0:
+            raise ValueError('something wrong in sampling BPL IMF')
+                        
+        mass[first]=(params['m_min']**(1.-params['alpha1'])+ran1[first]*(1.-params['alpha1'])/k1)**(1./(1.-params['alpha1']))
+        mass[second]=(m0_2**(1.-params['alpha2'])+(1.-params['alpha2'])/k2*(ran1[second]-f1))**(1./(1.-params['alpha2']))
+        
         def bpl_func(x):
             if ((type(x) is list)|(type(x) is np.ndarray)):
                 val=[]
@@ -1071,4 +1069,46 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
             
     return r2d_with_binaries(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),binary_model=params['binary_model'])
 
+def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_pc,**params):
+    
+    class r2d_binary_blend:
+        def __init__(self,r_xy=None,mag=None,blend=None):
+            self.r_xy=r_xy
+            self.mag=mag
+            self.blend=blend
+
+    xy=np.c_[r2d_wb.r_xyz.T[0],r2d_wb.r_xyz.T[1]]
+    mass=np.c_[r2d_wb.mass,r2d_wb.mass]
+
+    tree=scipy.spatial.KDTree(xy)
+    tree_single=scipy.spatial.KDTree(xy[r2d_wb.item==0])
+    tree_binary=scipy.spatial.KDTree(xy[r2d_wb.item>0])
+    query=tree.query(xy,k=2)
+    query_single=tree_single.query(xy[r2d_wb.item==0],k=2)
+    query_binary=tree_binary.query(xy[r2d_wb.item>0],k=2)
+    nn=query[0].T[1]
+    nn_single=query_single[0].T[1]
+    nn_binary=query_binary[0].T[1]
+
+    lum=10.**(-(mag-Mbol_sun)/2.5)
+    
+    tree=scipy.spatial.KDTree(xy)
+    query=tree.query(xy,k=2)
+    nn=query[0].T[1]
+    nn_partner=query[1].T[1]
+
+    unresolved=np.where(nn*xy.unit<resolution_limit_physical)[0]
+    
+    xy[unresolved]=(mass[unresolved]*xy[unresolved]+mass[nn_partner[unresolved]]*xy[nn_partner[unresolved]])/(mass[unresolved]+mass[nn_partner[unresolved]]) #replace position with mass-weighted mean position of unresolved partners
+    lum[unresolved]=lum[unresolved]+lum[nn_partner[unresolved]] #replace luminosity with sum of luminosities of unresolved partners
+    mag[unresolved]=Mbol_sun-2.5*np.log10(lum[unresolved]) #magnitude corresponding to sum of luminoisities
+
+    keep=np.full(len(xy),True,dtype='bool')
+    blend=np.full(len(xy),False,dtype='bool')
+    blend[unresolved]=True
+    for i in range(0,len(unresolved)):
+        if keep[unresolved[i]]:
+            keep[nn_partner[unresolved[i]]]=False
+            
+    return r2d_binary_blend(r_xy=xy[keep],mag=mag[keep],blend=blend[keep])
 
