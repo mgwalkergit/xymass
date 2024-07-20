@@ -1069,7 +1069,7 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
             
     return r2d_with_binaries(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),binary_model=params['binary_model'])
 
-def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_pc,**params):
+def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
     
     class r2d_binary_blend:
         def __init__(self,r_xy=None,mag=None,blend=None):
