@@ -92,13 +92,15 @@ where f_period specifies the time of observation as a fraction of the orbital pe
  
 # Examples 
 
-For examples of sampling 2D positions, see the [notebook](examples/xymass_sample_r2d_example.ipynb) in the examples folder.
+For examples of sampling 2D positions, see the [notebook](examples/sample_r2d.ipynb) in the examples folder.
 
-For examples of sampling initial masses, see the [notebook](examples/xymass_sample_imf_example.ipynb) in the examples folder.
+For examples of sampling initial masses, see the [notebook](examples/sample_imf.ipynb) in the examples folder.
 
-For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/xymass_sample_orbit_example.ipynb) in the examples folder.
+For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/sample_orbit.ipynb) in the examples folder.
 
-For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/xymass_sample_r2d_with_binaries_example.ipynb) in the examples folder.
+For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/sample_r2d_with_binaries.ipynb) in the examples folder.
+
+For examples of generating a synthetic stellar population, optionally with binary stars, with specific filter magnitudes calculated using the (MIST) isochrones package, including blending effects due to instrumental angular resolution, see the [notebook](examples/sample_r2d_with_binaries_blend.ipynb) in the examples folder.
 
 # Acknowledgement
 
