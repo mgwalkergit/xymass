@@ -556,7 +556,7 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
         period=10.**sample_normal_truncated(size=n_object,loc=4.8,scale=2.3,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
         long_period=np.where(period*365.24>1000.*u.day)[0]
-        eccentricity_thermal=sample_uni(size=len(long_period)) #sample thermal distribution for long periods, this is equivalent to sampling radial coordinate of uniform 2D distribution
+        eccentricity_thermal=uni(size=len(long_period)) #sample thermal distribution for long periods, this is equivalent to sampling radial coordinate of uniform 2D distribution
         eccentricity[long_period]=eccentricity_thermal
         eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 
