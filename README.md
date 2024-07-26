@@ -1,6 +1,6 @@
 # xymass
 
-A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal), optionally including physically-calculated binary star components. 
+A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal), optionally including biary star components, with positions obtained either by some specified separation function or by physical calculation of 2-body orbits.
 
 Author: Matthew G. Walker (2024) 
 

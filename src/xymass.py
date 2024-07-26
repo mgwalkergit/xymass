@@ -518,11 +518,11 @@ def sample_combine(sample_r2d,sample_imf,sample_binary,sample_orbit):
             
     return sample_final(r_xyz=np.array(r_xyz),mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int))
 
-def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primary+mass_secondary
+def add_binaries_physical(object_xyz,mass_primary,**params):
     
     class r2d_with_binaries:    
         def __init__(self,r_xyz=None,mass=None,item=None,companion=None,binary_model=None):
-            self.r_xyz=r_xyz #AU
+            self.r_xyz=r_xyz
             self.mass=mass
             self.item=item
             self.companion=companion
@@ -534,6 +534,12 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
         params['f_binary']=1.
     if not 'm_min' in params:
         params['m_min']=np.min(mass_primary.value)
+    if (('mass_secondary' in params)&('mass_ratio' in params)):
+        raise ValueError('cannot specify both mass_seconary and mass_ratio')
+    if 'mass_secondary' in params:
+        params['mass_ratio']=params['mass_secondary']/params['mass_primary']
+    elif 'mass_ratio' in params:
+        params['mass_secondary']=params['mass_primary']*params['mass_ratio']
         
     n_object=len(object_xyz)
     
@@ -545,14 +551,14 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
 
     if params['binary_model']=='Raghavan2010':
 
-        q=np.random.uniform(size=n_object,low=params['m_min']/mass_primary.value,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution subject to constraint M_secondary > M_min
+        mass_ratio=np.random.uniform(size=n_object,low=params['m_min']/mass_primary.value,high=1.) #array of m_secondary / m_primary, sampled from uniform distribution subject to constraint M_secondary > M_min
         period=10.**sample_normal_truncated(size=n_object,loc=5.03,scale=2.28,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=np.random.uniform(size=n_object,low=0.,high=1.)
         #eccentricity=10.**sample_normal_truncated(size=n_binary,loc=-0.3,scale=1.,min_value=-np.inf,max_value=0.) #array of orbital eccentricity, sampled from truncated log-normal distribution
         eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 
     elif params['binary_model']=='DM91':
-        q=sample_normal_truncated(size=n_object,loc=0.23,scale=0.42,min_value=params['m_min']/mass_primary.value,max_value=1.)
+        mass_ratio=sample_normal_truncated(size=n_object,loc=0.23,scale=0.42,min_value=params['m_min']/mass_primary.value,max_value=1.)
         period=10.**sample_normal_truncated(size=n_object,loc=4.8,scale=2.3,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
         long_period=np.where(period*365.24>1000.*u.day)[0]
@@ -561,7 +567,7 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
         eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 
     else:
-        q=params['q']
+        mass_ratio=params['mass_ratio']
         period=params['period']
         eccentricity=params['eccentricity']
         
@@ -569,7 +575,7 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
     inclination=sample_inclination(size=n_object)*u.rad #array of inclination angle (radians), inclination=0 for observer along +z axis, inclination=pi/2 for observer in xy plane, allowed from 0 to 2*pi to allow for full range of parity.
     longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad #array of longitude of ascending node (radians), longitude=0 if observer is along +x axis, longitude=pi/2 if observer is along +y axis
 
-    orbit_snapshot=sample_orbit_2body(f_period,period=period,eccentricity=eccentricity,mass_primary=mass_primary,mass_ratio=q,longitude=longitude,inclination=inclination)
+    orbit_snapshot=sample_orbit_2body(f_period,period=period,eccentricity=eccentricity,mass_primary=mass_primary,mass_ratio=mass_ratio,longitude=longitude,inclination=inclination)
 
     r_xyz=np.zeros((n_object+n_binary,3))*object_xyz[0].unit
     mass=np.zeros(n_object+n_binary)*orbit_snapshot.mass_primary[0].unit
@@ -608,6 +614,117 @@ def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primar
             j+=1
             
     return r2d_with_binaries(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),binary_model=params['binary_model'])
+
+def add_binaries_func(object_xyz,**params):
+    
+    class r2d_with_binaries_function:    
+        def __init__(self,r_xyz=None,mass=None,item=None,companion=None,separation_func=None,projected=None):
+            self.r_xyz=r_xyz
+            self.mass=mass
+            self.item=item
+            self.companion=companion
+            self.separation_func=separation_func
+            self.projected=projected
+
+    if not 'f_binary' in params:
+        params['f_binary']=1.
+    if (('mass_secondary' in params)&('mass_ratio' in params)):
+        raise ValueError('cannot specify both mass_seconary and mass_ratio')
+    if 'mass_secondary' in params:
+        params['mass_ratio']=params['mass_secondary']/params['mass_primary']
+    elif 'mass_ratio' in params:
+        params['mass_secondary']=params['mass_primary']*params['mass_ratio']
+        
+    n_object=len(object_xyz)
+    
+    is_binary=np.zeros(n_object,dtype='bool')
+    is_binary[np.random.uniform(size=n_object,low=0.,high=1.)<=params['f_binary']]=True
+    
+    n_binary=is_binary.sum()
+    n_single=n_object-n_binary
+
+    if params['separation_func']=='pl':
+        r=sampler.pl(len(object_xyz),params['s_min'].to(u.AU).value,params['s_max'].to(u.AU).value,params['alpha'])*params['s_min'].unit
+        
+    if params['separation_func']=='bpl':
+        r=sampler.bpl(len(object_xyz),params['s_min'].to(u.AU).value,params['s_max'].to(u.AU).value,params['alpha1'],params['alpha2'],params['s_break'].to(u.AU).value)[0]*params['s_min'].unit
+
+    if params['separation_func']=='lognormal':
+        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].to(u.AU).value),np.log10(params['s_max'].to(u.AU).value),np.log10(params['loc'].to(u.AU).value),np.log10(params['scale'].to(u.AU).value))*params['s_min'].unit
+                                        
+    longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad
+    if params['projected']:
+        inclination=np.zeros(len(object_xyz),dtype=float)*u.rad #if separation function is projected, view binary orbit face-on
+    else:
+        inclination=sample_inclination(size=len(object_xyz))*u.rad
+        
+    x=r#*np.cos(theta) #x component of separation vector in orbital plane, effectively assume theta=0 (pericenter, if this were orbit calculation)
+    y=r-r#sep*np.sin(theta) # y component of separation vector in orbital plane, effectively assume theta=0 (pericenter, if this were orbit calculation)
+    z=r-r
+        
+    trans1,trans2=-params['mass_ratio']/(1.+params['mass_ratio']),1./(1.+params['mass_ratio'])    
+    x1,y1=trans1*x,trans1*y
+    x2,y2=trans2*x,trans2*y
+
+    r_xyz=np.array((x,y,z)).T*r.unit
+    r1_xyz=np.array((x1,y1,z)).T*r.unit
+    r2_xyz=np.array((x2,y2,z)).T*r.unit
+
+    r_obs_xyz=np.zeros(np.shape(r_xyz))*r.unit
+    r1_obs_xyz=np.zeros(np.shape(r_xyz))*r.unit
+    r2_obs_xyz=np.zeros(np.shape(r_xyz))*r.unit
+    
+    rot_matrix=[]
+        
+    rot_alpha=longitude.to(u.rad).value #rotation about z axis, in direction of arc from +x to +y (radians)
+    rot_beta=0. #rotation about y axis, in direction of arc from +z to +x (radians)
+    rot_gamma=inclination.to(u.rad).value #rotation about x axis, in direction of arc from +y to +z (radians)
+
+    for i in range(0,len(longitude)):
+        rot_matrix.append(get_rot_matrix(rot_alpha[i],rot_beta,rot_gamma[i]))
+
+    for i in range(0,len(rot_matrix)):
+        r_obs_xyz.value[i]=rot_matrix[i].apply(r_xyz.value[i])
+        r1_obs_xyz.value[i]=rot_matrix[i].apply(r1_xyz.value[i])
+        r2_obs_xyz.value[i]=rot_matrix[i].apply(r2_xyz.value[i])    
+
+    r_xyz=np.zeros((n_object+n_binary,3))*object_xyz[0].unit
+    mass=np.zeros(n_object+n_binary)*params['mass_primary'][0].unit
+    item=np.zeros(n_object+n_binary,dtype='int')
+    companion=np.zeros(n_object+n_binary,dtype='int')
+
+    j=0
+    
+    for i in range(0,len(object_xyz)):
+        
+        if is_binary[i]:
+
+            if np.abs(1.-params['mass_primary'][i]/params['mass_primary'][i])>0.01:
+                raise ValueError('problem with binary mass samples!')
+            r1=(object_xyz[i]+r1_obs_xyz[i]).to(object_xyz[0].unit)
+            r2=(object_xyz[i]+r2_obs_xyz[i]).to(object_xyz[0].unit)
+            
+            r_xyz.value[j]=r1.value
+            mass.value[j]=params['mass_primary'].value[i]
+            item[j]=1
+            companion[j]=j+1
+            j+=1
+            
+            r_xyz.value[j]=r2.value
+            mass.value[j]=params['mass_secondary'].value[i]
+            item[j]=2
+            companion[j]=j-1
+            j+=1
+            
+        else:
+            
+            r_xyz.value[j]=object_xyz[i].value
+            mass.value[j]=params['mass_primary'].value[i]
+            item[j]=0
+            companion[j]=-999
+            j+=1
+            
+    return r2d_with_binaries_function(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),separation_func=params['separation_func'],projected=params['projected'])
 
 def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
     
