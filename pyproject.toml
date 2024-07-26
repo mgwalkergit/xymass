@@ -1,6 +1,6 @@
 [project]
 name = "xymass"
-version = "1.2.3"
+version = "1.2.5"
 authors = [
   { name="Matthew G. Walker", email="mgwalker@cmu.edu" },
 ]
