@@ -537,9 +537,9 @@ def add_binaries_physical(object_xyz,mass_primary,**params):
     if (('mass_secondary' in params)&('mass_ratio' in params)):
         raise ValueError('cannot specify both mass_seconary and mass_ratio')
     if 'mass_secondary' in params:
-        params['mass_ratio']=params['mass_secondary']/params['mass_primary']
+        params['mass_ratio']=params['mass_secondary']/mass_primary
     elif 'mass_ratio' in params:
-        params['mass_secondary']=params['mass_primary']*params['mass_ratio']
+        params['mass_secondary']=mass_primary*params['mass_ratio']
         
     n_object=len(object_xyz)
     
@@ -617,7 +617,7 @@ def add_binaries_physical(object_xyz,mass_primary,**params):
 
 def add_binaries_func(object_xyz,**params):
     
-    class r2d_with_binaries_function:    
+    class r2d_with_binaries_func:    
         def __init__(self,r_xyz=None,mass=None,item=None,companion=None,separation_func=None,projected=None):
             self.r_xyz=r_xyz
             self.mass=mass
@@ -650,7 +650,7 @@ def add_binaries_func(object_xyz,**params):
         r=sampler.bpl(len(object_xyz),params['s_min'].to(u.AU).value,params['s_max'].to(u.AU).value,params['alpha1'],params['alpha2'],params['s_break'].to(u.AU).value)[0]*params['s_min'].unit
 
     if params['separation_func']=='lognormal':
-        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].to(u.AU).value),np.log10(params['s_max'].to(u.AU).value),np.log10(params['loc'].to(u.AU).value),np.log10(params['scale'].to(u.AU).value))*params['s_min'].unit
+        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].to(u.AU).value),np.log10(params['s_max'].to(u.AU).value),params['loc'],params['scale'])*params['s_min'].unit
                                         
     longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad
     if params['projected']:
@@ -724,7 +724,7 @@ def add_binaries_func(object_xyz,**params):
             companion[j]=-999
             j+=1
             
-    return r2d_with_binaries_function(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),separation_func=params['separation_func'],projected=params['projected'])
+    return r2d_with_binaries_func(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),separation_func=params['separation_func'],projected=params['projected'])
 
 def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
     
