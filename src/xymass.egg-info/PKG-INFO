@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: xymass
-Version: 1.1.1
+Version: 1.2.0
 Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models, including binary companions
 Author-email: "Matthew G. Walker" <mgwalker@cmu.edu>
 Project-URL: Homepage, https://github.com/mgwalkergit/xymass
@@ -18,7 +18,7 @@ Requires-Dist: matplotlib
 
 # xymass
 
-A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal), including physically-calculated binary star components.
+A package for generating random samples of 2D stellar positions from common surface density models (plummer, exponential, generalized plummer), and random samples of masses from common initial mass functions (Salpeter, Kroupa, broken power law, log-normal), optionally including physically-calculated binary star components. 
 
 Author: Matthew G. Walker (2024) 
 
@@ -110,13 +110,15 @@ where f_period specifies the time of observation as a fraction of the orbital pe
  
 # Examples 
 
-For examples of sampling 2D positions, see the [notebook](examples/xymass_sample_r2d_example.ipynb) in the examples folder.
+For examples of sampling 2D positions, see the [notebook](examples/sample_r2d.ipynb) in the examples folder.
 
-For examples of sampling initial masses, see the [notebook](examples/xymass_sample_imf_example.ipynb) in the examples folder.
+For examples of sampling initial masses, see the [notebook](examples/sample_imf.ipynb) in the examples folder.
 
-For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/xymass_sample_orbit_example.ipynb) in the examples folder.
+For examples of sampling position and velocity components due to binary star orbits, see the [notebook](examples/sample_orbit.ipynb) in the examples folder.
 
-For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/xymass_sample_r2d_with_binaries_example.ipynb) in the examples folder.
+For examples of adding physically-calculated binary star positions to the sampled 2D positions, see the [notebook](examples/sample_r2d_with_binaries.ipynb) in the examples folder.
+
+For examples of generating a synthetic stellar population, optionally with binary stars, with specific filter magnitudes calculated using the (MIST) isochrones package, including blending effects due to instrumental angular resolution, see the [notebook](examples/sample_r2d_with_binaries_blend.ipynb) in the examples folder.
 
 # Acknowledgement
 
