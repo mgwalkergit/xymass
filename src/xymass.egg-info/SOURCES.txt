@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 src/__init__.py
+src/orbit_animation.py
 src/sampler.py
 src/xymass.py
 src/xymass.egg-info/PKG-INFO

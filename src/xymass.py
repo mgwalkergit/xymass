@@ -454,11 +454,6 @@ def sample_normal_truncated(**params):
 
     return sampler.normal_truncated(params['size'],params['min_value'],params['max_value'],params['loc'],params['scale'])
 
-def sample_thermal(**params):
-    if not 'size' in params:
-        params['size']=1
-    return sampler.uni(size=params['size']) #thermal distribution is equivalent to radial coordinate of uniform profile
-
 def sample_inclination(**params):
     if not 'size' in params:
         params['size']=1
@@ -523,7 +518,7 @@ def sample_combine(sample_r2d,sample_imf,sample_binary,sample_orbit):
             
     return sample_final(r_xyz=np.array(r_xyz),mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int))
 
-def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_secondary
+def add_binaries_physical(object_xyz,mass_primary,**params):#mass is mass_primary+mass_secondary
     
     class r2d_with_binaries:    
         def __init__(self,r_xyz=None,mass=None,item=None,companion=None,binary_model=None):
@@ -561,7 +556,7 @@ def add_binaries(object_xyz,mass_primary,**params):#mass is mass_primary+mass_se
         period=10.**sample_normal_truncated(size=n_object,loc=4.8,scale=2.3,min_value=-np.inf,max_value=np.inf)/364.25*u.yr #array of orbital period (years), sampled from truncated log-normal distribution
         eccentricity=sample_normal_truncated(size=n_object,loc=0.31,scale=0.17,min_value=0.,max_value=1.)
         long_period=np.where(period*365.24>1000.*u.day)[0]
-        eccentricity_thermal=sample_thermal(size=len(long_period)) #sample thermal distribution for long periods
+        eccentricity_thermal=sample_uni(size=len(long_period)) #sample thermal distribution for long periods, this is equivalent to sampling radial coordinate of uniform 2D distribution
         eccentricity[long_period]=eccentricity_thermal
         eccentricity[period*365.24<12.*u.day]=0. #eccentricity=0 for P<12 days
 

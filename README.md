@@ -78,9 +78,9 @@ broken power law: alpha1=1.3, alpha2=2.3, m_break=0.5
 
 log-normal: mean=0.08, std=0.7 
 
-In order to replace some fraction f_binary of sampled coordinates with positions of individual members of binary star systems:
+In order to replace some fraction f_binary of sampled coordinates with positions of individual members of binary star systems based on 2body orbit calculations:
 
- ```sample_xy_withbinaries=xymass.add_binaries(sample_xy.r_xyz,sample_mass.mass*u.M_sun,f_binary=f_binary,m_min=m_min,binary_model='Raghavan2010')```
+ ```sample_xy_withbinaries=xymass.add_binaries_physical(sample_xy.r_xyz,sample_mass.mass*u.M_sun,f_binary=f_binary,m_min=m_min,binary_model='Raghavan2010')```
 
 The positions of the stars within the binary systems are sampled by drawing from a 2-body Keplerian orbit (randomly-drawn physical and observational parameters), with binary orbital parameters specified either by the user (see examples) or,as here, according to the parameters inferred by Raghavan et al. 2010 (Duquennoy & Mayor 1991 also available as 'DM91).  m_min should be set to the minimum mass allowed for the secondary (e.g., hydrogen-burning limit).  
 
