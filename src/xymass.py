@@ -738,22 +738,19 @@ def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
     mass=np.c_[r2d_wb.mass,r2d_wb.mass]
 
     tree=scipy.spatial.KDTree(xy)
-    tree_single=scipy.spatial.KDTree(xy[r2d_wb.item==0])
-    tree_binary=scipy.spatial.KDTree(xy[r2d_wb.item>0])
+    #tree_single=scipy.spatial.KDTree(xy[r2d_wb.item==0])
+    #tree_binary=scipy.spatial.KDTree(xy[r2d_wb.item>0])
     query=tree.query(xy,k=2)
-    query_single=tree_single.query(xy[r2d_wb.item==0],k=2)
-    query_binary=tree_binary.query(xy[r2d_wb.item>0],k=2)
+    #query_single=tree_single.query(xy[r2d_wb.item==0],k=2)
+    #query_binary=tree_binary.query(xy[r2d_wb.item>0],k=2)
     nn=query[0].T[1]
-    nn_single=query_single[0].T[1]
-    nn_binary=query_binary[0].T[1]
+    #nn_single=query_single[0].T[1]
+    #nn_binary=query_binary[0].T[1]
+
+    nn_partner=query[1].T[1]
 
     lum=10.**(-(mag-Mbol_sun)/2.5)
     
-    tree=scipy.spatial.KDTree(xy)
-    query=tree.query(xy,k=2)
-    nn=query[0].T[1]
-    nn_partner=query[1].T[1]
-
     unresolved=np.where(nn*xy.unit<resolution_limit_physical)[0]
     
     xy[unresolved]=(mass[unresolved]*xy[unresolved]+mass[nn_partner[unresolved]]*xy[nn_partner[unresolved]])/(mass[unresolved]+mass[nn_partner[unresolved]]) #replace position with mass-weighted mean position of unresolved partners
