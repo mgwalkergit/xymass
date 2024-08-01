@@ -656,7 +656,7 @@ def add_binaries_func(object_xyz,**params):
         
     if params['separation_func']=='bpl':
         if not(type(params['s_break'])==astropy.units.quantity.Quantity):
-            params['s_max']=params['s_break']*params['s_min'].unit
+            params['s_break']=params['s_break']*params['s_min'].unit
         r=sampler.bpl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].value)[0]*params['s_min'].unit
 
     if params['separation_func']=='lognormal':
