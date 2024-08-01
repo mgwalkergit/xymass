@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 src/__init__.py
+src/mock_plum_1.py
 src/orbit_animation.py
 src/sampler.py
 src/xymass.py
