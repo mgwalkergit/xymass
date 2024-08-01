@@ -634,6 +634,13 @@ def add_binaries_func(object_xyz,**params):
         params['mass_ratio']=params['mass_secondary']/params['mass_primary']
     elif 'mass_ratio' in params:
         params['mass_secondary']=params['mass_primary']*params['mass_ratio']
+
+    if not(type(object_xyz)==astropy.units.quantity.Quantity): #if input is not a quantity, make it a dimensionless quantity
+        object_xyz=object_xyz*u.AU/u.AU
+    if not(type(params['s_min'])==astropy.units.quantity.Quantity):
+        params['s_min']=params['s_min']*u.AU/u.AU
+    if not(type(params['s_max'])==astropy.units.quantity.Quantity):
+        params['s_max']=params['s_max']*u.AU/u.AU
         
     n_object=len(object_xyz)
     
@@ -647,6 +654,8 @@ def add_binaries_func(object_xyz,**params):
         r=sampler.pl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha'])*params['s_min'].unit
         
     if params['separation_func']=='bpl':
+        if not(type(params['s_break'])==astropy.units.quantity.Quantity):
+            params['s_max']=params['s_break']*params['s_min'].unit
         r=sampler.bpl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].value)[0]*params['s_min'].unit
 
     if params['separation_func']=='lognormal':
