@@ -711,6 +711,10 @@ def add_binaries_func(object_xyz,**params):
 
             if np.abs(1.-params['mass_primary'][i]/params['mass_primary'][i])>0.01:
                 raise ValueError('problem with binary mass samples!')
+            print(type(object_xyz))
+            print(type(r1_obs_xyz))
+            print(object_xyz)
+            print(r1_obs_xyz)
             r1=(object_xyz[i]+r1_obs_xyz[i]).to(object_xyz[0].unit)
             r2=(object_xyz[i]+r2_obs_xyz[i]).to(object_xyz[0].unit)
             
