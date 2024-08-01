@@ -644,13 +644,13 @@ def add_binaries_func(object_xyz,**params):
     n_single=n_object-n_binary
 
     if params['separation_func']=='pl':
-        r=sampler.pl(len(object_xyz),params['s_min'].to(u.AU).value,params['s_max'].to(u.AU).value,params['alpha'])*params['s_min'].unit
+        r=sampler.pl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha'])*params['s_min'].unit
         
     if params['separation_func']=='bpl':
-        r=sampler.bpl(len(object_xyz),params['s_min'].to(u.AU).value,params['s_max'].to(u.AU).value,params['alpha1'],params['alpha2'],params['s_break'].to(u.AU).value)[0]*params['s_min'].unit
+        r=sampler.bpl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].value)[0]*params['s_min'].unit
 
     if params['separation_func']=='lognormal':
-        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].to(u.AU).value),np.log10(params['s_max'].to(u.AU).value),params['loc'],params['scale'])*params['s_min'].unit
+        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].value),np.log10(params['s_max'].value),params['loc'],params['scale'])*params['s_min'].unit
                                         
     longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad
     if params['projected']:
