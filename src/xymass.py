@@ -6,6 +6,7 @@ import scipy.special
 import warnings
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
+import astropy
 from astropy import units as u
 import time
 
