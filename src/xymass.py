@@ -652,7 +652,7 @@ def add_binaries_func(object_xyz,**params):
     n_single=n_object-n_binary
 
     if params['separation_func']=='opik':
-        r=sampler.pl(len(object_xyz),params['s_min'].value,params['s_max'].value)[0]*params['s_min'].unit
+        r=sampler.opik(len(object_xyz),params['s_min'].value,params['s_max'].value)[0]*params['s_min'].unit
         
     if params['separation_func']=='pl':
         r=sampler.pl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha'])*params['s_min'].unit
