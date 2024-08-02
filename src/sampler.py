@@ -134,6 +134,12 @@ def kroupa(size,x_min,x_max,alpha1,alpha2,alpha3,x1,x2):
 
     return x,k1,k2,k3
 
+def opik(size,x_min,x_max):
+    ran=np.random.uniform(low=0.,high=1.,size=size)
+    k=1./np.log(x_max/x_min)
+    x=x_min*(x_max/x_min)**ran
+    return x,k
+
 def bpl(size,x_min,x_max,alpha1,alpha2,x0):
     ran=np.random.uniform(low=0.,high=1.,size=size)
     x=np.zeros(size,dtype=float)
