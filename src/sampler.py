@@ -35,7 +35,30 @@ def uni(size):#sample radial coordinate from uniform (2D) distribution
 
 def pl(size,x_min,x_max,alpha):#sample coordinate from power law
     ran=np.random.uniform(low=0.,high=1.,size=size)
-    return (x_min**(1.-alpha)+ran*(x_max**(1.-alpha)-x_min**(1.-alpha)))**(1./(1.-alpha))
+    k=(1.-alpha)/(x_max**(1.-alpha)-x_min**(1.-alpha))
+    return (x_min**(1.-alpha)+ran*(x_max**(1.-alpha)-x_min**(1.-alpha)))**(1./(1.-alpha)),k
+
+def abg(size,x_min,x_max,alpha,beta,gamma,xbreak):#sample coordinate from alpha/beta/gamma model
+    
+    ran=np.random.uniform(low=0.,high=1.,size=size)
+
+    a=(1.-gamma)/alpha
+    b=(beta-gamma)/alpha
+    c=(1.+alpha-gamma)/alpha
+    z1=-(x_min/xbreak)**alpha
+    z2=-(x_max/xbreak)**alpha
+    k=1./xbreak*(gamma-1.)/((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-(x_max/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z2))
+    
+    def findx(x,uni):
+        return  ((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-x**(1.-gamma)*scipy.special.hyp2f1(a,b,c,-x**alpha))/((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-(x_max/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z2))-uni
+
+    low0=1.e-10
+    high0=1000.
+    x=np.zeros(size,dtype=float)
+    
+    for i in range(0,len(ran)):
+        x[i]=xbreak*scipy.optimize.brentq(findx,low0,high0,args=ran[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
+    return x,k
 
 def lognormal(size,x_min,x_max,loc,scale):
     ran=np.random.uniform(low=0.,high=1.,size=size)
