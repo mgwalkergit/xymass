@@ -6,8 +6,8 @@ import scipy.special
 import warnings
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
-import astropy
-from astropy import units as u
+import astropy as ap
+import astropy.units as u
 import time
 
 def sample_r2d(size,model,**params):#samples from flattened plummer, exponential, or (not flattened) uniform 2d distributions
@@ -153,7 +153,7 @@ def sample_imf(size,model,**params):
         def salpeter_func(x):
             return k_salpeter*x**-params['alpha']
             
-        mass=sampler.pl(size,params['m_min'],params['m_max'],params['alpha'])
+        mass=sampler.pl(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha'])
         
         return imf(model=model,mass=mass,alpha=params['alpha'],k=k_salpeter,m_min=params['m_min'],m_max=params['m_max'],func=salpeter_func)
 
@@ -171,7 +171,7 @@ def sample_imf(size,model,**params):
         def lognormal_func(x):
             return k_lognormal/x/np.log(10.)*np.exp(-(np.log10(x)-np.log10(params['mean']))**2/2./params['std']**2)
             
-        mass=sampler.lognormal(size,params['m_min'],params['m_max'],params['mean'],params['std'])
+        mass=sampler.lognormal(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['mean'].to(params['m_max'].unit).value,params['std'].to(params['m_max'].unit).value)
         
         return imf(model=model,mass=mass,mean=params['mean'],std=params['std'],k=k_lognormal,m_min=params['m_min'],m_max=params['m_max'],func=lognormal_func)
         
@@ -195,34 +195,49 @@ def sample_imf(size,model,**params):
         k2_over_k1=params['m1_break']**(params['alpha2']-params['alpha1'])
         k3_over_k2=params['m2_break']**(params['alpha3']-params['alpha2'])
         
-        mass,k1,k2,k3=sampler.kroupa(size,params['m_min'],params['m_max'],params['alpha1'],params['alpha2'],params['alpha3'],params['m1_break'],params['m2_break'])
+        mass,k1,k2,k3=sampler.kroupa(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha1'],params['alpha2'],params['alpha3'],params['m1_break'].to(params['m_max'].unit).value,params['m2_break'].to(params['m_max'].unit).value)
                             
         def kroupa_func(x):
-            if ((type(x) is list)|(type(x) is np.ndarray)):
-                val=[]
-                for i in range(0,len(x)):
-                    if x[i]<params['m1_break']:
-                        val.append(k1*x[i]**-params['alpha1'])
-                    elif ((x[i]>=params['m1_break'])&(x[i]<params['m2_break'])):
-                        val.append(k2*x[i]**-params['alpha2'])
-                    elif x[i]>=params['m2_break']:
-                        val.append(k3*x[i]**-params['alpha3'])
+
+            if type(x) is ap.units.quantity.Quantity:
+                
+                if ((type(x.value) is list)|(type(x.value) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)*k1.unit
+                    first=np.where(x<params['m1_break'])[0]
+                    second=np.where((x>=params['m1_break'])&(x<params['m2_break']))[0]
+                    third=np.where(x>=params['m2_break'])[0]
+                    val.value[first]=k1.value*(x[first].to(params['m_max'].unit).value)**-params['alpha1']
+                    val.value[second]=k2.value*(x[second].to(params['m_max'].unit).value)**-params['alpha2']
+                    val.value[third]=k3.value*(x[third].to(params['m_max'].unit).value)**-params['alpha3']
+                elif ((type(x.value) is float)|(type(x.value) is int)|(type(x.value) is np.float64)):
+                    if x<params['m1_break']:
+                        val=k1*(x.to(params['m_max'].unit).value)**-params['alpha1']
+                    elif ((x>=params['m1_break'])&(x<params['m2_break'])):
+                        val=k2*(x.to(params['m_max'].unit().value)**-params['alpha2']
+                    elif x>=params['m2_break']:
+                        val=k3*(x.to(params['m_max'].unit).value)**-params['alpha3']
                     else:
                         raise ValueError('problem in kroupa_func')
-                val=np.array(val)
-                
-            elif ((type(x) is float)|(type(x) is int)):
-                if x<params['m1_break']:
-                    val=k1*x**-params['alpha1']
-                elif ((x>=params['m1_break'])&(x<params['m2_break'])):
-                    val=k2*x**-params['alpha2']
-                elif x>=params['m2_break']:
-                    val=k3*x**-params['alpha3']
-                else:
-                    raise ValueError('problem in kroupa_func')
             else:
-                raise TypeError('type error in kroupa func')
                 
+                if ((type(x) is list)|(type(x) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)
+                    first=np.where(x<params['m1_break'])[0]
+                    second=np.where((x>=params['m1_break'])&(x<params['m2_break']))[0]
+                    third=np.where(x>=params['m2_break'])[0]
+                    val[first]=k1*x[first]**-params['alpha1']
+                    val[second]=k2*x[second]**-params['alpha2']
+                    val[third]=k3*x[third]**-params['alpha3']
+                elif ((type(x) is float)|(type(x) is int)|(type(x) is np.float64)):
+                    if x<params['m1_break']:
+                        val=k1*x**-params['alpha1']
+                    elif ((x>=params['m1_break'])&(x<params['m2_break'])):
+                        val=k2*x**-params['alpha2']
+                    elif x>=params['m2_break']:
+                        val=k3*x**-params['alpha3']
+                    else:
+                        raise ValueError('problem in kroupa_func')
+                    
             return val
         
         return imf(model=model,mass=mass,alpha1=params['alpha1'],alpha2=params['alpha2'],alpha3=params['alpha3'],m1_break=params['m1_break'],m2_break=params['m2_break'],m_min=params['m_min'],m_max=params['m_max'],k1=k1,k2=k2,k3=k3,func=kroupa_func)
@@ -239,29 +254,47 @@ def sample_imf(size,model,**params):
         #get normalization constant for each of three pieces
         k2_over_k1=params['m_break']**(params['alpha2']-params['alpha1'])
         
-        mass,k1,k2=sampler.bpl(size,params['m_min'],params['m_max'],params['alpha1'],params['alpha2'],params['m_break'])
+        mass,k1,k2=sampler.bpl(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha1'],params['alpha2'],params['m_break'].to(params['m_max'].unit).value)
         
         def bpl_func(x):
-            if ((type(x) is list)|(type(x) is np.ndarray)):
-                val=[]
-                for i in range(0,len(x)):
-                    if x[i]<params['m_break']:
-                        val.append(k1*x[i]**-params['alpha1'])
-                    elif x[i]>=params['m_break']:
-                        val.append(k2*x[i]**-params['alpha2'])
+
+            if type(x) is ap.units.quantity.Quantity:
+                
+                if ((type(x.value) is list)|(type(x.value) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)*k1.unit
+                    first=np.where(x<params['m_break'])[0]
+                    second=np.where(x>=params['m_break'])[0]
+                    val.value[first]=k1.value*(x[first].to(params['m_max'].unit).value)**-params['alpha1']
+                    val.value[second]=k2.value*(x[second].to(params['m_max'].unit).value)**-params['alpha2']
+                
+                elif ((type(x.value) is float)|(type(x.value) is int)):
+                    if x<params['m_break']:
+                        val=k1*(x.to(params['m_max'].unit).value)**-params['alpha1']
+                    elif x>=params['m_break']:
+                        val=k2*(x.to(params['m_max'].unit).value)**-params['alpha2']
                     else:
                         raise ValueError('problem in bpl_func')
-                val=np.array(val)
-                
-            elif ((type(x) is float)|(type(x) is int)):
-                if x<params['m_break']:
-                    val=k1*x**-params['alpha1']
-                elif x>=params['m_break']:
-                    val=k2*x**-params['alpha2']
                 else:
-                    raise ValueError('problem in bpl_func')
+                    raise TypeError('type error in bpl func')
+
             else:
-                raise TypeError('type error in bpl func')
+                
+                if ((type(x) is list)|(type(x) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)
+                    first=np.where(x<params['m_break'])[0]
+                    second=np.where(x>=params['m_break'])[0]
+                    val[first]=k1*x[first]**-params['alpha1']
+                    val[second]=k2*x[second]**-params['alpha2']
+                
+                elif ((type(x) is float)|(type(x) is int)):
+                    if x<params['m_break']:
+                        val=k1*x**-params['alpha1']
+                    elif x>=params['m_break']:
+                        val=k2*x**-params['alpha2']
+                    else:
+                        raise ValueError('problem in bpl_func')
+                else:
+                    raise TypeError('type error in bpl func')
                 
             return val
         
@@ -441,19 +474,19 @@ def sample_orbit_2body(f_period,**params):#f_period is time of observation / per
 
     return orbit_2body(semimajor_axis=semimajor_axis,eccentricity=params['eccentricity'],mass_primary=params['mass_primary'],mass_secondary=mass_secondary,energy=energy,angular_momentum=angular_momentum,inclination=params['inclination'],longitude=params['longitude'],f_period=f_period,time=f_period*params['period'],period=params['period'],eta=eta,theta=theta,r_xyz=r_xyz,r_sph=r_sph,v_xyz=v_xyz,v_sph=v_sph,r1_xyz=r1_xyz,v1_xyz=v1_xyz,r2_xyz=r2_xyz,v2_xyz=v2_xyz,r_obs_xyz=r_obs_xyz,r1_obs_xyz=r1_obs_xyz,r2_obs_xyz=r2_obs_xyz,v_obs_xyz=v_obs_xyz,v1_obs_xyz=v1_obs_xyz,v2_obs_xyz=v2_obs_xyz,rot_matrix=rot_matrix)
 
-def sample_normal_truncated(**params):
-    if not 'size' in params:
-        params['size']=1
-    if not 'min_value' in params:
-        params['min_value']=-np.inf
-    if not 'max_value' in params:
-        params['max_value']=np.inf
-    if not 'loc' in params:
-        params['loc']=0.
-    if not 'scale' in params:
-        params['scale']=1.
-
-    return sampler.normal_truncated(params['size'],params['min_value'],params['max_value'],params['loc'],params['scale'])
+#def sample_normal_truncated(**params):
+#    if not 'size' in params:
+#        params['size']=1
+#    if not 'min_value' in params:
+#        params['min_value']=-np.inf
+#    if not 'max_value' in params:
+#        params['max_value']=np.inf
+#    if not 'loc' in params:
+#        params['loc']=0.
+#    if not 'scale' in params:
+#        params['scale']=1.
+#
+#    return sampler.normal_truncated(params['size'],params['min_value'],params['max_value'],params['loc'],params['scale'])
 
 def sample_inclination(**params):
     if not 'size' in params:
@@ -636,11 +669,11 @@ def add_binaries_func(object_xyz,**params):
     elif 'mass_ratio' in params:
         params['mass_secondary']=params['mass_primary']*params['mass_ratio']
 
-    if not(type(object_xyz)==astropy.units.quantity.Quantity): #if input is not a quantity, make it a dimensionless quantity
+    if not(type(object_xyz)==ap.units.quantity.Quantity): #if input is not a quantity, make it a dimensionless quantity
         object_xyz=object_xyz*u.AU/u.AU
-    if not(type(params['s_min'])==astropy.units.quantity.Quantity):
+    if not(type(params['s_min'])==ap.units.quantity.Quantity):
         params['s_min']=params['s_min']*u.AU/u.AU
-    if not(type(params['s_max'])==astropy.units.quantity.Quantity):
+    if not(type(params['s_max'])==ap.units.quantity.Quantity):
         params['s_max']=params['s_max']*u.AU/u.AU
         
     n_object=len(object_xyz)
@@ -652,18 +685,18 @@ def add_binaries_func(object_xyz,**params):
     n_single=n_object-n_binary
 
     if params['separation_func']=='opik':
-        r=sampler.opik(len(object_xyz),params['s_min'].value,params['s_max'].value)[0]*params['s_min'].unit
+        r=sampler.opik(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value)*params['s_max'].unit
         
     if params['separation_func']=='pl':
-        r=sampler.pl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha'])*params['s_min'].unit
+        r=sampler.pl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha'])*params['s_max'].unit
         
     if params['separation_func']=='bpl':
-        if not(type(params['s_break'])==astropy.units.quantity.Quantity):
-            params['s_break']=params['s_break']*params['s_min'].unit
-        r=sampler.bpl(len(object_xyz),params['s_min'].value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].value)[0]*params['s_min'].unit
+        if not(type(params['s_break'])==ap.units.quantity.Quantity):
+            params['s_break']=params['s_break']*params['s_max'].unit
+        r=sampler.bpl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].to(params['s_max'].unit).value)*params['s_max'].unit
 
     if params['separation_func']=='lognormal':
-        r=10.**sampler.normal_truncated(len(object_xyz),np.log10(params['s_min'].value),np.log10((params['s_max']).to(params['s_min'].unit).value),np.log10((params['loc']).to(params['s_min'].unit).value),np.log10((params['scale']).to(params['s_min'].unit).value))*params['s_min'].unit
+        r=10.**sampler.normal_truncated(len(object_xyz),np.log10((params['s_min'].to(params['s_max'].unit)).value),np.log10(params['s_max'].value),np.log10((params['loc']).to(params['s_max'].unit).value),np.log10((params['scale']).to(params['s_max'].unit).value))*params['s_max'].unit
                                         
     longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad
     if params['projected']:
