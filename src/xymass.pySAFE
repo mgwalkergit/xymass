@@ -39,7 +39,7 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         params['r_scale']=1.
         warnings.warn('r_scale not specified, assuming r_scale=1')
     if params['r_scale']<0:
-        raise ValueError('must have r_scale >=0.')
+        raise ValueError('r_scale = '+str(params['r_scale'])+' is invalid value, must have r_scale >=0.')
     if (('position_angle' in params)&(not 'ellipticity' in params)):
         raise ValueError('specified position_angle but not ellipticity')
     if (('position_angle' not in params)&('ellipticity' in params)):
@@ -138,9 +138,9 @@ def sample_imf(size,model,**params):
             self.func=func
 
     if not 'm_min' in params:
-        params['m_min']=0.1
+        params['m_min']=0.1*u.M_sun
     if not 'm_max' in params:
-        params['m_max']=150.
+        params['m_max']=150.*u.M_sun
     if params['m_min']>params['m_max']:
         raise ValueError ('m_min cannot be larger than m_max')
         
@@ -149,7 +149,7 @@ def sample_imf(size,model,**params):
         if not 'alpha' in params:
             params['alpha']=2.3
         
-        mass,k_salpeter=sampler.pl(size,params['m_min'],params['m_max'],params['alpha'])
+        mass,k_salpeter=sampler.pl(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha'])
 
         def salpeter_func(x):
             return k_salpeter*x**-params['alpha']
@@ -163,14 +163,14 @@ def sample_imf(size,model,**params):
         if not 'std' in params:
             params['std']=0.7
             
-        erf1=scipy.special.erf((np.log10(params['mean'])*np.log(10.)-np.log(params['m_min']))/np.sqrt(2.)/np.log(10.)/params['std'])
-        erf2=scipy.special.erf((np.log10(params['mean'])*np.log(10.)-np.log(params['m_max']))/np.sqrt(2.)/np.log(10.)/params['std'])
+        erf1=scipy.special.erf((np.log10(params['mean'])*np.log(10.)-np.log(params['m_min'].to(u.M_sun).value))/np.sqrt(2.)/np.log(10.)/params['std'])
+        erf2=scipy.special.erf((np.log10(params['mean'])*np.log(10.)-np.log(params['m_max'].to(u.M_sun).value))/np.sqrt(2.)/np.log(10.)/params['std'])
         k_lognormal=np.sqrt(2./np.pi)/params['std']/(erf1-erf2)
         
         def lognormal_func(x):
             return k_lognormal/x/np.log(10.)*np.exp(-(np.log10(x)-np.log10(params['mean']))**2/2./params['std']**2)
             
-        mass=sampler.lognormal(size,params['m_min'],params['m_max'],params['mean'],params['std'])
+        mass=sampler.lognormal(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['mean'],params['std'])
         
         return imf(model=model,mass=mass,mean=params['mean'],std=params['std'],k=k_lognormal,m_min=params['m_min'],m_max=params['m_max'],func=lognormal_func)
         
@@ -183,9 +183,9 @@ def sample_imf(size,model,**params):
         if not 'alpha3' in params:
             params['alpha3']=2.3
         if not 'm1_break' in params:
-            params['m1_break']=0.08
+            params['m1_break']=0.08*u.M_sun
         if not 'm2_break' in params:
-            params['m2_break']=0.5
+            params['m2_break']=0.5*u.M_sun
             
         if params['m1_break']>params['m2_break']:
             raise ValueError ('Kroupa IMF: m1_break cannot be larger than m2_break')
@@ -194,27 +194,48 @@ def sample_imf(size,model,**params):
         k2_over_k1=params['m1_break']**(params['alpha2']-params['alpha1'])
         k3_over_k2=params['m2_break']**(params['alpha3']-params['alpha2'])
         
-        mass,k1,k2,k3=sampler.kroupa(size,params['m_min'],params['m_max'],params['alpha1'],params['alpha2'],params['alpha3'],params['m1_break'],params['m2_break'])
+        mass,k1,k2,k3=sampler.kroupa(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha1'],params['alpha2'],params['alpha3'],params['m1_break'].to(params['m_max'].unit).value,params['m2_break'].to(params['m_max'].unit).value)
                             
         def kroupa_func(x):
 
-            if ((type(x) is list)|(type(x) is np.ndarray)):
-                val=np.zeros(len(x),dtype=float)
-                first=np.where(x<params['m1_break'])[0]
-                second=np.where((x>=params['m1_break'])&(x<params['m2_break']))[0]
-                third=np.where(x>=params['m2_break'])[0]
-                val[first]=k1*x[first]**-params['alpha1']
-                val[second]=k2*x[second]**-params['alpha2']
-                val[third]=k3*x[third]**-params['alpha3']
-            elif ((type(x) is float)|(type(x) is int)|(type(x) is np.float64)):
-                if x<params['m1_break']:
-                    val=k1*x**-params['alpha1']
-                elif ((x>=params['m1_break'])&(x<params['m2_break'])):
-                    val=k2*x**-params['alpha2']
-                elif x>=params['m2_break']:
-                    val=k3*x**-params['alpha3']
-                else:
-                    raise ValueError('problem in kroupa_func')
+            if type(x) is ap.units.quantity.Quantity:
+                
+                if ((type(x.value) is list)|(type(x.value) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)*k1.unit
+                    first=np.where(x<params['m1_break'])[0]
+                    second=np.where((x>=params['m1_break'])&(x<params['m2_break']))[0]
+                    third=np.where(x>=params['m2_break'])[0]
+                    val.value[first]=k1.value*(x[first].to(params['m_max'].unit).value)**-params['alpha1']
+                    val.value[second]=k2.value*(x[second].to(params['m_max'].unit).value)**-params['alpha2']
+                    val.value[third]=k3.value*(x[third].to(params['m_max'].unit).value)**-params['alpha3']
+                elif ((type(x.value) is float)|(type(x.value) is int)|(type(x.value) is np.float64)):
+                    if x<params['m1_break']:
+                        val=k1*(x.to(params['m_max'].unit).value)**-params['alpha1']
+                    elif ((x>=params['m1_break'])&(x<params['m2_break'])):
+                        val=k2*(x.to(params['m_max'].unit).value)**-params['alpha2']
+                    elif x>=params['m2_break']:
+                        val=k3*(x.to(params['m_max'].unit).value)**-params['alpha3']
+                    else:
+                        raise ValueError('problem in kroupa_func')
+            else:
+                
+                if ((type(x) is list)|(type(x) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)
+                    first=np.where(x<params['m1_break'])[0]
+                    second=np.where((x>=params['m1_break'])&(x<params['m2_break']))[0]
+                    third=np.where(x>=params['m2_break'])[0]
+                    val[first]=k1*x[first]**-params['alpha1']
+                    val[second]=k2*x[second]**-params['alpha2']
+                    val[third]=k3*x[third]**-params['alpha3']
+                elif ((type(x) is float)|(type(x) is int)|(type(x) is np.float64)):
+                    if x<params['m1_break']:
+                        val=k1*x**-params['alpha1']
+                    elif ((x>=params['m1_break'])&(x<params['m2_break'])):
+                        val=k2*x**-params['alpha2']
+                    elif x>=params['m2_break']:
+                        val=k3*x**-params['alpha3']
+                    else:
+                        raise ValueError('problem in kroupa_func')
                     
             return val
         
@@ -232,26 +253,47 @@ def sample_imf(size,model,**params):
         #get normalization constant for each of three pieces
         k2_over_k1=params['m_break']**(params['alpha2']-params['alpha1'])
         
-        mass,k1,k2=sampler.bpl(size,params['m_min'],params['m_max'],params['alpha1'],params['alpha2'],params['m_break'])
+        mass,k1,k2=sampler.bpl(size,params['m_min'].to(params['m_max'].unit).value,params['m_max'].value,params['alpha1'],params['alpha2'],params['m_break'].to(params['m_max'].unit).value)
         
         def bpl_func(x):
 
-            if ((type(x) is list)|(type(x) is np.ndarray)):
-                val=np.zeros(len(x),dtype=float)
-                first=np.where(x<params['m_break'])[0]
-                second=np.where(x>=params['m_break'])[0]
-                val[first]=k1*x[first]**-params['alpha1']
-                val[second]=k2*x[second]**-params['alpha2']
+            if type(x) is ap.units.quantity.Quantity:
                 
-            elif ((type(x) is float)|(type(x) is int)):
-                if x<params['m_break']:
-                    val=k1*x**-params['alpha1']
-                elif x>=params['m_break']:
-                    val=k2*x**-params['alpha2']
+                if ((type(x.value) is list)|(type(x.value) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)*k1.unit
+                    first=np.where(x<params['m_break'])[0]
+                    second=np.where(x>=params['m_break'])[0]
+                    val.value[first]=k1.value*(x[first].to(params['m_max'].unit).value)**-params['alpha1']
+                    val.value[second]=k2.value*(x[second].to(params['m_max'].unit).value)**-params['alpha2']
+                
+                elif ((type(x.value) is float)|(type(x.value) is int)):
+                    if x<params['m_break']:
+                        val=k1*(x.to(params['m_max'].unit).value)**-params['alpha1']
+                    elif x>=params['m_break']:
+                        val=k2*(x.to(params['m_max'].unit).value)**-params['alpha2']
+                    else:
+                        raise ValueError('problem in bpl_func')
                 else:
-                    raise ValueError('problem in bpl_func')
+                    raise TypeError('type error in bpl func')
+
             else:
-                raise TypeError('type error in bpl func')
+                
+                if ((type(x) is list)|(type(x) is np.ndarray)):
+                    val=np.zeros(len(x),dtype=float)
+                    first=np.where(x<params['m_break'])[0]
+                    second=np.where(x>=params['m_break'])[0]
+                    val[first]=k1*x[first]**-params['alpha1']
+                    val[second]=k2*x[second]**-params['alpha2']
+                
+                elif ((type(x) is float)|(type(x) is int)):
+                    if x<params['m_break']:
+                        val=k1*x**-params['alpha1']
+                    elif x>=params['m_break']:
+                        val=k2*x**-params['alpha2']
+                    else:
+                        raise ValueError('problem in bpl_func')
+                else:
+                    raise TypeError('type error in bpl func')
                 
             return val
         
