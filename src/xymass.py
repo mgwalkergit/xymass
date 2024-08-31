@@ -431,19 +431,19 @@ def sample_orbit_2body(f_period,**params):#f_period is time of observation / per
 
     return orbit_2body(semimajor_axis=semimajor_axis,eccentricity=params['eccentricity'],mass_primary=params['mass_primary'],mass_secondary=mass_secondary,energy=energy,angular_momentum=angular_momentum,inclination=params['inclination'],longitude=params['longitude'],f_period=f_period,time=f_period*params['period'],period=params['period'],eta=eta,theta=theta,r_xyz=r_xyz,r_sph=r_sph,v_xyz=v_xyz,v_sph=v_sph,r1_xyz=r1_xyz,v1_xyz=v1_xyz,r2_xyz=r2_xyz,v2_xyz=v2_xyz,r_obs_xyz=r_obs_xyz,r1_obs_xyz=r1_obs_xyz,r2_obs_xyz=r2_obs_xyz,v_obs_xyz=v_obs_xyz,v1_obs_xyz=v1_obs_xyz,v2_obs_xyz=v2_obs_xyz,rot_matrix=rot_matrix)
 
-#def sample_normal_truncated(**params):
-#    if not 'size' in params:
-#        params['size']=1
-#    if not 'min_value' in params:
-#        params['min_value']=-np.inf
-#    if not 'max_value' in params:
-#        params['max_value']=np.inf
-#    if not 'loc' in params:
-#        params['loc']=0.
-#    if not 'scale' in params:
-#        params['scale']=1.
-#
-#    return sampler.normal_truncated(params['size'],params['min_value'],params['max_value'],params['loc'],params['scale'])
+def sample_normal_truncated(**params):
+    if not 'size' in params:
+        params['size']=1
+    if not 'min_value' in params:
+        params['min_value']=-np.inf
+    if not 'max_value' in params:
+        params['max_value']=np.inf
+    if not 'loc' in params:
+        params['loc']=0.
+    if not 'scale' in params:
+        params['scale']=1.
+
+    return sampler.normal_truncated(params['size'],params['min_value'],params['max_value'],params['loc'],params['scale'])
 
 def sample_inclination(**params):
     if not 'size' in params:
@@ -642,18 +642,22 @@ def add_binaries_func(object_xyz,**params):
     n_single=n_object-n_binary
 
     if params['separation_func']=='opik':
-        r=sampler.opik(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value)*params['s_max'].unit
-        
+        r,k=sampler.opik(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value)
+        r=r*params['s_max'].unit
+
     if params['separation_func']=='pl':
-        r=sampler.pl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha'])*params['s_max'].unit
+        r,k=sampler.pl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha'])
+        r=r*params['s_max'].unit
         
     if params['separation_func']=='bpl':
         if not(type(params['s_break'])==ap.units.quantity.Quantity):
             params['s_break']=params['s_break']*params['s_max'].unit
-        r=sampler.bpl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].to(params['s_max'].unit).value)*params['s_max'].unit
+        r,k1,k2=sampler.bpl(len(object_xyz),params['s_min'].to(params['s_max'].unit).value,params['s_max'].value,params['alpha1'],params['alpha2'],params['s_break'].to(params['s_max'].unit).value)
+        r=r*params['s_max'].unit
 
     if params['separation_func']=='lognormal':
-        r=10.**sampler.normal_truncated(len(object_xyz),np.log10((params['s_min'].to(params['s_max'].unit)).value),np.log10(params['s_max'].value),np.log10((params['loc']).to(params['s_max'].unit).value),np.log10((params['scale']).to(params['s_max'].unit).value))*params['s_max'].unit
+        r=10.**sampler.normal_truncated(len(object_xyz),np.log10((params['s_min'].to(params['s_max'].unit)).value),np.log10(params['s_max'].value),np.log10((params['loc']).to(params['s_max'].unit).value),np.log10((params['scale']).to(params['s_max'].unit).value))
+        r=r*params['s_max'].unit
                                         
     longitude=np.random.uniform(size=n_object,low=0,high=2.*np.pi)*u.rad
     if params['projected']:
