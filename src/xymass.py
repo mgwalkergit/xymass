@@ -333,7 +333,7 @@ def sample_orbit_2body(f_period,**params):#f_period is time of observation / per
 
     mass_secondary=params['mass_primary']*params['mass_ratio']
     mass=params['mass_primary']+mass_secondary
-    semimajor_axis=(params['period']**2*g*mass/4.*np.pi**2)**(1./3.) #AU, assuming period in yr and mass in Msun
+    semimajor_axis=(params['period']**2*g*mass/(4.*np.pi**2))**(1./3.) #AU, assuming period in yr and mass in Msun
     #period=np.sqrt(params['semimajor_axis']**3/(params['mass_primary']+mass_secondary)) #yr, assuming semimajor axis in AU and mass in Msun
     energy=-g*mass/2/semimajor_axis
     angular_momentum=np.sqrt(g*mass*(1.-params['eccentricity']**2))
