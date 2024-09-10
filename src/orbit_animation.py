@@ -61,6 +61,8 @@ def animation_2body_r(sample_orbit,animation_filename):
 
             self.ax1.set_xlabel(r'$x/a$',fontsize=7)
             self.ax1.set_ylabel(r'$y/a$',fontsize=7,labelpad=-3)
+            self.ax1.set_xlabel(r'$x/a$',fontsize=7)
+            self.ax1.set_ylabel(r'$y/a$',fontsize=7,labelpad=-3)
             
             self.ax2.set_xlabel(r'$y/a$',fontsize=7)
             self.ax2.set_ylabel(r'$z/a$',fontsize=7,labelpad=-3)
@@ -327,4 +329,163 @@ def animation_2body_v(sample_orbit,animation_filename):
             return self.v_x_scat,self.v1_x_scat,self.v2_x_scat,self.v_y_scat,self.v1_y_scat,self.v2_y_scat,self.v_z_scat,self.v1_z_scat,self.v2_z_scat,self.v_obs_x_scat,self.v1_obs_x_scat,self.v2_obs_x_scat,self.v_obs_y_scat,self.v1_obs_y_scat,self.v2_obs_y_scat,self.v_obs_z_scat,self.v1_obs_z_scat,self.v2_obs_z_scat,self.t_text
     a=animate_v()
     plt.show()
+
+
+
+def animation_2body_spec(sample_orbit,spec,spec1,spec2,animation_filename):
+
+    class animate_spec(object):#based on https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
+
+        def __init__(self):
+            self.stream = self.data_stream()
+
+            self.fig=plt.figure(1)
+            self.ax1=self.fig.add_subplot(221,aspect='equal')
+            self.ax5=self.fig.add_subplot(212)
+            self.ax6=self.fig.add_subplot(222)
+            self.fig.subplots_adjust(wspace=0.45,hspace=0.25)
+
+            if animation_filename==None:
+                save_animation_to_file=False
+            else:
+                save_animation_to_file=True
+                
+            if save_animation_to_file:
+                self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=10*len(sample_orbit.r_xyz))
+                writer=animation.FFMpegWriter(fps=60)
+                f=aniation_filename+'.mp4'
+                self.ani.save(f,writer=writer)
+            else:
+                self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=1*len(sample_orbit.r_xyz))
+
+        def setup_plot(self):
+
+            first=True
+            piss=next(self.stream)
+            t,x,y,x1,y1,x2,y2,v_obs_z,v1_obs_z,v2_obs_z,t_text=piss[0].T
+            wav_obs,spec_obs,spec1_obs,spec2_obs=piss[1].T
+
+            lim_r=np.max(np.abs(np.concatenate([sample_orbit.r_xyz.T[0].value,sample_orbit.r_xyz.T[1].value,sample_orbit.r1_xyz.T[0].value,sample_orbit.r1_xyz.T[1].value,sample_orbit.r2_xyz.T[0].value,sample_orbit.r2_xyz.T[1].value])))*1.2/sample_orbit.semimajor_axis[0].value*1.5
+            
+            lim_v=np.max(np.abs(np.concatenate([sample_orbit.v_xyz.T[0].value,sample_orbit.v_xyz.T[1].value,sample_orbit.v_xyz.T[2].value,sample_orbit.v1_xyz.T[0].value,sample_orbit.v1_xyz.T[1].value,sample_orbit.v1_xyz.T[2].value,sample_orbit.v2_xyz.T[0].value,sample_orbit.v2_xyz.T[1].value,sample_orbit.v2_xyz.T[2].value])))*1.1/np.sqrt(-2.*sample_orbit.energy[0].value)*1.3
+            lim_spec=np.max(np.concatenate([spec1.flux,spec2.flux,spec.flux]))
+
+            if first:
+                self.ax1.scatter([-np.inf],[-np.inf],s=15,edgecolor='k',facecolor='none',label='reduced mass')
+                self.ax1.scatter([-np.inf],[-np.inf],s=20,color='b',label='particle 1')
+                self.ax1.scatter([-np.inf],[-np.inf],s=10,color='r',label='particle 2')
+                self.ax5.plot([-np.inf],[-np.inf],color='b',label='particle 1')
+                self.ax5.plot([-np.inf],[-np.inf],color='r',label='particle 2')
+                self.ax5.plot([-np.inf],[-np.inf],color='k',label='sum')
+                first=False
+
+            self.ax1.plot(sample_orbit.r_xyz.T[0].value/sample_orbit.semimajor_axis.value,sample_orbit.r_xyz.T[1].value/sample_orbit.semimajor_axis.value,color='k',lw=1)
+            self.ax1.plot(sample_orbit.r1_xyz.T[0].value/sample_orbit.semimajor_axis.value,sample_orbit.r1_xyz.T[1].value/sample_orbit.semimajor_axis.value,color='b',lw=1)
+            self.ax1.plot(sample_orbit.r2_xyz.T[0].value/sample_orbit.semimajor_axis.value,sample_orbit.r2_xyz.T[1].value/sample_orbit.semimajor_axis.value,color='r',lw=1)
+                
+            self.ax6.plot(sample_orbit.time.value/sample_orbit.period.value,sample_orbit.v_obs_xyz.T[2].value/np.sqrt(-2.*sample_orbit.energy.value),color='k',lw=1)
+            self.ax6.plot(sample_orbit.time.value/sample_orbit.period.value,sample_orbit.v1_obs_xyz.T[2].value/np.sqrt(-2.*sample_orbit.energy.value),color='b',lw=1)
+            self.ax6.plot(sample_orbit.time.value/sample_orbit.period.value,sample_orbit.v2_obs_xyz.T[2].value/np.sqrt(-2.*sample_orbit.energy.value),color='r',lw=1)
+
+            self.ax1.text(-lim_r*0.98,lim_r*0.88,r'$m_2/m_1=$'+str("{:.2f}".format(round(sample_orbit.mass_secondary[0].value/sample_orbit.mass_primary[0].value,3))),fontsize=5) #after rotation
+            self.ax1.text(-lim_r*0.98,lim_r*0.76,r'$e=$'+str("{:.2f}".format(round(sample_orbit.eccentricity[0],3))),fontsize=5)
+
+            self.ax1.set_xlabel(r'$x/a$',fontsize=7)
+            self.ax1.set_ylabel(r'$y/a$',fontsize=7,labelpad=-3)
+            
+            self.ax6.set_ylabel(r'$v_{\rm obs,z}/\sqrt{-2E}$',fontsize=7)
+
+            self.ax6.text(0.05,lim_v*0.88,r'$i=$'+str("{:.2f}".format(round(sample_orbit.inclination[0].to(u.rad).value*180/np.pi,2)))+r'$^{\circ}$',fontsize=6,horizontalalignment='left')
+            self.ax6.text(0.05,lim_v*0.76,r'$l=$'+str("{:.2f}".format(round(sample_orbit.longitude[0].to(u.rad).value*180/np.pi,2)))+r'$^{\circ}$',fontsize=6,horizontalalignment='left')
+            
+            for ax in [self.ax1]:
+                ax.axvline(0,ls=':',color='k')
+                ax.axhline(0,ls=':',color='k')
+                ax.set_xlim([-lim_r,lim_r])
+                ax.set_ylim([-lim_r,lim_r])
+                ax.tick_params(labelsize=7)
+                
+            for ax in [self.ax6]:
+                ax.axvline(0,ls=':',color='k')
+                ax.axhline(0,ls=':',color='k')
+                ax.set_xlim([0,1])
+                ax.set_ylim([-lim_v,lim_v])
+                ax.set_xlabel('time / period',fontsize=7)
+                ax.tick_params(labelsize=7)
+
+            for ax in [self.ax5]:
+                ax.set_xlim([5150,5200])
+                ax.set_ylim([0,lim_spec])
+                ax.set_xlabel('wavelength [Angstroms]',fontsize=7)
+                ax.set_ylabel('Flux / max(Flux)',fontsize=7)
+                ax.tick_params(left=None,labelleft=None,labelsize=7)
+                
+            self.xy_scat = self.ax1.scatter(x, y, edgecolor='k', facecolor='none',s=15)
+            self.xy1_scat = self.ax1.scatter(x1, y1, c='b', s=20)
+            self.xy2_scat = self.ax1.scatter(x2, y2, c='r', s=10)
+            self.v_obs_z_scat=self.ax6.scatter(t, v_obs_z, ec='k',fc='none', s=15)
+            self.v1_obs_z_scat=self.ax6.scatter(t, v1_obs_z, c='b', s=20)
+            self.v2_obs_z_scat=self.ax6.scatter(t, v2_obs_z, c='r', s=10)
+            self.spec_obs_plot=self.ax5.plot(wav_obs,spec_obs,c='k',lw=0.5)[0]
+            self.spec1_obs_plot=self.ax5.plot(wav_obs,spec1_obs,c='b',lw=0.5)[0]
+            self.spec2_obs_plot=self.ax5.plot(wav_obs,spec2_obs,c='r',lw=0.5)[0]
+
+            self.t_text=self.ax1.text(-lim_r*0.98,lim_r*0.64,r'time / period $=$'+str("{:.2f}".format(round(t_text[0],2))),fontsize=6)
+                
+            self.ax1.legend(fontsize=5)
+            self.ax5.legend(fontsize=5)
+            return self.xy_scat,self.xy1_scat,self.xy2_scat,self.v_obs_z_scat,self.v1_obs_z_scat,self.v2_obs_z_scat,self.spec_obs_plot,self.spec1_obs_plot,self.spec2_obs_plot,self.t_text
+    
+        def data_stream(self):
+            
+            i=0
+            while True:
+                #self.ax5.plot(spec.wav,spec.flux[i],color='k')
+                x=sample_orbit.r_xyz.T[0][i].value/sample_orbit.semimajor_axis[i].value
+                y=sample_orbit.r_xyz.T[1][i].value/sample_orbit.semimajor_axis[i].value
+                z=sample_orbit.r_xyz.T[2][i].value/sample_orbit.semimajor_axis[i].value
+                x1=sample_orbit.r1_xyz.T[0][i].value/sample_orbit.semimajor_axis[i].value
+                y1=sample_orbit.r1_xyz.T[1][i].value/sample_orbit.semimajor_axis[i].value
+                z1=sample_orbit.r1_xyz.T[2][i].value/sample_orbit.semimajor_axis[i].value
+                x2=sample_orbit.r2_xyz.T[0][i].value/sample_orbit.semimajor_axis[i].value
+                y2=sample_orbit.r2_xyz.T[1][i].value/sample_orbit.semimajor_axis[i].value
+                z2=sample_orbit.r2_xyz.T[2][i].value/sample_orbit.semimajor_axis[i].value
+                v_obs_z=sample_orbit.v_obs_xyz.T[2].value[i]/np.sqrt(-2.*sample_orbit.energy[i].value)
+                v1_obs_z=sample_orbit.v1_obs_xyz.T[2].value[i]/np.sqrt(-2.*sample_orbit.energy[i].value)
+                v2_obs_z=sample_orbit.v2_obs_xyz.T[2].value[i]/np.sqrt(-2.*sample_orbit.energy[i].value)
+                spec_obs=spec.flux[i]
+                spec1_obs=spec1.flux[i]
+                spec2_obs=spec2.flux[i]
+                wav_obs=spec.wav
+            
+                t=sample_orbit.time[i].value/sample_orbit.period[i].value
+                i+=1
+                if i==len(sample_orbit.r_xyz):#infinite loop
+                    i=0
+                yield np.c_[t,x,y,x1,y1,x2,y2,v_obs_z,v1_obs_z,v2_obs_z,t],np.c_[wav_obs,spec_obs,spec1_obs,spec2_obs]
+
+        def update(self, i):
+            
+            piss=next(self.stream)
+            #t,x,y,x1,y1,x2,y2,v_obs_z,v1_obs_z,v2_obs_z,t_text=piss[0].T
+            data1=piss[0]
+            data2=piss[1].T
+
+            self.xy_scat.set_offsets([[data1[0][1],data1[0][2]]])
+            self.xy1_scat.set_offsets([[data1[0][3],data1[0][4]]])
+            self.xy2_scat.set_offsets([[data1[0][5],data1[0][6]]])
+            self.v_obs_z_scat.set_offsets([[data1[0][0],data1[0][7]]])
+            self.v1_obs_z_scat.set_offsets([[data1[0][0],data1[0][8]]])
+            self.v2_obs_z_scat.set_offsets([[data1[0][0],data1[0][9]]])
+            self.spec_obs_plot.set_data([data2[0],data2[1]])
+            self.spec1_obs_plot.set_data([data2[0],data2[2]])
+            self.spec2_obs_plot.set_data([data2[0],data2[3]])
+            self.t_text.set_text('time / period='+str("{:.2f}".format(round(data1[0][0],2))))
+
+            #return the updated artist
+            return self.xy_scat,self.xy1_scat,self.xy2_scat,self.v_obs_z_scat,self.v1_obs_z_scat,self.v2_obs_z_scat,self.spec_obs_plot,self.spec1_obs_plot,self.spec2_obs_plot,self.t_text
+    a=animate_spec()
+    plt.show()
+
+
 
