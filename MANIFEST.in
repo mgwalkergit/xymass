@@ -1,0 +1,2 @@
+include src/mypkg/*.txt
+include src/mypkg/*.rst

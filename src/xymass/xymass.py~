@@ -1,4 +1,4 @@
-from xymass import sampler
+import sampler
 import numpy as np
 import scipy
 import scipy.optimize
