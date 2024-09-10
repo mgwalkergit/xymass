@@ -1,12 +1,11 @@
 LICENSE
 README.md
 pyproject.toml
-src/xymass/2body.py
-src/xymass/__init__.py
-src/xymass/main.py
-src/xymass/orbit_animation.py
-src/xymass/sampler.py
-src/xymass/test.py
+src/__init__.py
+src/orbit_animation.py
+src/sampler.py
+src/test.py
+src/xymass.py
 src/xymass.egg-info/PKG-INFO
 src/xymass.egg-info/SOURCES.txt
 src/xymass.egg-info/dependency_links.txt

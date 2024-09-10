@@ -1,6 +1,1 @@
-__init__
-mock_plum_1
-orbit_animation
-sampler
-test
 xymass
