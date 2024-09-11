@@ -1,9 +1,9 @@
 LICENSE
-MANIFEST.in
 README.md
 pyproject.toml
 src/xymass/2body.py
 src/xymass/__init__.py
+src/xymass/get_solar_spec.py
 src/xymass/main.py
 src/xymass/orbit_animation.py
 src/xymass/sampler.py
