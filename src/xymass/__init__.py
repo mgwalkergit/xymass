@@ -1,2 +1,2 @@
-from .main import sample_r2d,sample_imf,sample_orbit_2body,add_binaries_physical,add_binaries_func,binary_blend
+from .main import sample_r2d,sample_imf,sample_orbit_2body,add_binaries_physical,add_binaries_func,binary_blend,sample_normal_truncated,sample_inclination
 from .orbit_animation import animation_2body_r,animation_2body_v,animation_2body_spec
