@@ -1,5 +1,5 @@
 import xymass.main as xymass
-import orbit_animation
+from xymass import orbit_animation
 import numpy as np
 import scipy
 import astropy.units as u
