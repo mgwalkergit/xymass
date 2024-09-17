@@ -53,7 +53,7 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         raise ValueError('ellipticity = '+str(params['ellipticity'])+' is invalid value, must be between 0 and 1')
     if ((model=='uni')&(params['ellipticity']!=0)):
         warnings.warn('specified uniform distribution with nonzero ellipticity!')
-    if model=='2bg':
+    if model=='a2bg':
         if 'beta' not in params:
             raise ValueError('must specify beta and gamma for 2bg model')
         if 'gamma' not in params:
@@ -93,8 +93,8 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         def rootfind_a2bg_2d(x,beta,gamma):
             return 0.5-np.sqrt(np.pi)*scipy.special.gamma((beta-gamma)/2)/2/scipy.special.gamma(beta/2)/scipy.special.gamma((3-gamma)/2)*x**(3-beta)*scipy.special.hyp2f1((beta-3)/2,(beta-gamma)/2,beta/2,-1/x**2)
 
-        low0=1.e-10
-        high0=1.e+10
+        low0=1.e-30
+        high0=1.e+30
         rhalf_2d=params['r_scale']*scipy.optimize.brentq(rootfind_a2bg_2d,low0,high0,args=(params['beta'],params['gamma']),xtol=1.e-12,rtol=1.e-6,maxiter=1000,full_output=False,disp=True)
 
         def func(x):

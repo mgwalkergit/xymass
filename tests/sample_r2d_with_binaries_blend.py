@@ -92,16 +92,28 @@ mass_tot=np.sum(r2d_with_binaries_raghavan.mass) #total mass of sampled populati
 
 f090w=r2d_with_binaries_blend_raghavan.mag.T[18]+dmodulus #apparent magnitude of sampled stars in JWST F090W
 f150w=r2d_with_binaries_blend_raghavan.mag.T[19]+dmodulus #apparent magnitude of sampled stars in JWST F150W
+r062=r2d_with_binaries_blend_raghavan.mag.T[28]+dmodulus #apparent magnitude of sampled stars in Roman R062
+j129=r2d_with_binaries_blend_raghavan.mag.T[31]+dmodulus #apparent magnitude of sampled stars in Roman J129
+h158=r2d_with_binaries_blend_raghavan.mag.T[33]+dmodulus #apparent magnitude of sampled stars in Roman J158
+
 
 #simulate observational errors similar to JWST ERS program (Weisz et al. 2022)
 e_f090w=10.**(0.3*f090w-9.7)
 e_f150w=10.**(0.3*f150w-9.35)
+#e_r062=e_f090w #completely made up
+#e_j129=e_f090w #completely made up
+#e_h158=e_f090w #completely made up
 
 f090w_obs=f090w+np.random.normal(loc=0.,scale=e_f090w)
 f150w_obs=f150w+np.random.normal(loc=0.,scale=e_f150w)
+#r062_obs=r062+np.random.normal(loc=0.,scale=e_r062)
+#j129_obs=r062+np.random.normal(loc=0.,scale=e_j129)
+#h158_obs=r062+np.random.normal(loc=0.,scale=e_h158)
 
 mag=f090w_obs #simulated F090W magnitudes, including observational errors
 col=f090w_obs-f150w_obs #simulated F090W - F150W colors, including observational errors
+#mag=j129_obs #simulated F090W magnitudes, including observational errors
+#col=j129_obs-h158_obs #simulated F090W - F150W colors, including observational errors
 
 fig=plt.figure(1)
 ax1=fig.add_subplot(221)
@@ -129,6 +141,8 @@ ax3.scatter([-999],[-999],color='r',label='blend',s=1)
 ax3.scatter(col,mag,color=cols,alpha=0.3,s=1,rasterized=True)
 ax3.set_xlabel('F090W -- F150W')
 ax3.set_ylabel('F090W')
+#ax3.set_xlabel('R062 -- H158')
+#ax3.set_ylabel('R062')
 ax3.set_ylim([30,16])
 ax3.set_xlim([-1,2])
 ax3.legend(fontsize=6)
@@ -166,16 +180,27 @@ mass_tot=np.sum(r2d_with_binaries_bpl.mass) #total mass of sampled population
 
 f090w=r2d_with_binaries_blend_bpl.mag.T[18]+dmodulus #apparent magnitude of sampled stars in JWST F090W
 f150w=r2d_with_binaries_blend_bpl.mag.T[19]+dmodulus #apparent magnitude of sampled stars in JWST F150W
+r062=r2d_with_binaries_blend_raghavan.mag.T[28]+dmodulus #apparent magnitude of sampled stars in Roman R062
+j129=r2d_with_binaries_blend_raghavan.mag.T[31]+dmodulus #apparent magnitude of sampled stars in Roman J129
+h158=r2d_with_binaries_blend_raghavan.mag.T[33]+dmodulus #apparent magnitude of sampled stars in Roman J158
 
 #simulate observational errors similar to JWST ERS program (Weisz et al. 2022)
 e_f090w=10.**(0.3*f090w-9.7)
 e_f150w=10.**(0.3*f150w-9.35)
+#e_r062=e_f090w #completely made up
+#e_j129=e_f090w #completely made up
+#e_h158=e_f090w #completely made up
 
 f090w_obs=f090w+np.random.normal(loc=0.,scale=e_f090w)
 f150w_obs=f150w+np.random.normal(loc=0.,scale=e_f150w)
+#r062_obs=r062+np.random.normal(loc=0.,scale=e_r062)
+#j129_obs=r062+np.random.normal(loc=0.,scale=e_j129)
+#h158_obs=r062+np.random.normal(loc=0.,scale=e_h158)
 
 mag=f090w_obs #simulated F090W magnitudes, including observational errors
 col=f090w_obs-f150w_obs #simulated F090W - F150W colors, including observational errors
+#mag=j129_obs #simulated F090W magnitudes, including observational errors
+#col=j129_obs-h158_obs #simulated F090W - F150W colors, including observational errors
 
 
 fig=plt.figure(1)
@@ -204,6 +229,8 @@ ax3.scatter([-999],[-999],color='r',label='blend',s=1)
 ax3.scatter(col,mag,color=cols,alpha=0.3,s=1,rasterized=True)
 ax3.set_xlabel('F090W -- F150W')
 ax3.set_ylabel('F090W')
+#ax3.set_xlabel('R062 -- H158')
+#ax3.set_ylabel('R062')
 ax3.set_ylim([30,16])
 ax3.set_xlim([-1,2])
 ax3.legend(fontsize=6)
