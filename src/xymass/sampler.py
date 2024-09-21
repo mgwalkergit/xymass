@@ -3,8 +3,8 @@ import scipy
 import scipy.optimize
 import scipy.special
 
-low0=1.e-10
-high0=1.e10
+low0=1.e-30
+high0=1.e+30
 
 def plum(size):#sample radial coordinate from plummer profile
     ran=np.random.uniform(low=0.,high=1.,size=size)
@@ -52,7 +52,7 @@ def abg(size,x_min,x_max,alpha,beta,gamma,xbreak):#sample coordinate from alpha/
     def findx(x,uni):
         return  ((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-x**(1.-gamma)*scipy.special.hyp2f1(a,b,c,-x**alpha))/((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-(x_max/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z2))-uni
 
-    low0=1.e-10
+    low0=1.e-30
     high0=1000.
     x=np.zeros(size,dtype=float)
     
