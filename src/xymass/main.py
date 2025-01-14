@@ -28,6 +28,11 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
             self.func=func
             self.rhalf_2d=rhalf_2d
 
+    if not 'brentq_low' in params:
+        params['brentq_low']=1.e-20
+    if not 'brentq_high' in params:
+        params['brentq_high']=1.e+20
+        
     def flatten_2d(size,params):#computes x,y coordinates (units of r_scale) given ellipticity and position angle (units of R/r_scale**2)
         phi=2.*np.pi*np.random.uniform(low=0.,high=1.,size=size)#azimuthal angle in circular coordinates
         x0,y0=np.cos(phi)*(1.-params['ellipticity']),np.sin(phi)#stretch along x axis
@@ -82,7 +87,7 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         def func(x):
             return bigsigma0*np.exp(-x)
 
-        r=sampler.exp(size) #elliptical radius / r_scale
+        r=sampler.exp(size,bretnt_low=params['brentq_low'],brentq_high=params['brentq_high']) #elliptical radius / r_scale
 
         return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,func=func,rhalf_2d=rhalf_2d)
 
@@ -93,14 +98,14 @@ def sample_r2d(size,model,**params):#samples from flattened plummer, exponential
         def rootfind_a2bg_2d(x,beta,gamma):
             return 0.5-np.sqrt(np.pi)*scipy.special.gamma((beta-gamma)/2)/2/scipy.special.gamma(beta/2)/scipy.special.gamma((3-gamma)/2)*x**(3-beta)*scipy.special.hyp2f1((beta-3)/2,(beta-gamma)/2,beta/2,-1/x**2)
 
-        low0=1.e-30
-        high0=1.e+30
+        low0=1.e-10
+        high0=1.e+10
         rhalf_2d=params['r_scale']*scipy.optimize.brentq(rootfind_a2bg_2d,low0,high0,args=(params['beta'],params['gamma']),xtol=1.e-12,rtol=1.e-6,maxiter=1000,full_output=False,disp=True)
 
         def func(x):
             return bigsigma0*x**(1-params['beta'])*scipy.special.hyp2f1((params['beta']-1)/2,(params['beta']-params['gamma'])/2,params['beta']/2,-1/x**2)            
 
-        r=sampler.a2bg(size,params['beta'],params['gamma'])#elliptical radius / r_scale
+        r=sampler.a2bg(size,params['beta'],params['gamma'],brentq_low=params['brentq_low'],brentq_high=params['brentq_high'])#elliptical radius / r_scale
 
         return r2d(r_ell=r*params['r_scale'],x=r*flat_x*params['r_scale'],y=r*flat_y*params['r_scale'],r_xyz=np.c_[r*flat_x*params['r_scale'],r*flat_y*params['r_scale'],np.zeros(len(r),dtype=float)],ellipticity=params['ellipticity'],position_angle=params['position_angle'],r_scale=params['r_scale'],model=model,beta=params['beta'],gamma=params['gamma'],func=func,rhalf_2d=rhalf_2d)
     

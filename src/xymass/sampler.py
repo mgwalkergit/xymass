@@ -3,30 +3,38 @@ import scipy
 import scipy.optimize
 import scipy.special
 
-low0=1.e-30
-high0=1.e+30
+low0=1.e-10
+high0=1.e+10
 
 def plum(size):#sample radial coordinate from plummer profile
     ran=np.random.uniform(low=0.,high=1.,size=size)
     return np.sqrt(ran/(1.-ran))
 
-def exp(size):#sample radial coordinate from exponential profile
+def exp(size,**params):#sample radial coordinate from exponential profile
+    if not 'brentq_low' in params:
+        params['brentq_low']=1.e-10
+    if not 'brentq_high' in params:
+        params['brentq_high']=1.e+10
     ran=np.random.uniform(low=0.,high=1.,size=size)
     def findx_exp(x,ran):
         return 1.-(1.+x)*np.exp(-x)-ran
     x=np.zeros(size,dtype='float')
     for i in range(0,len(ran)):
-        x[i]=scipy.optimize.brentq(findx_exp,low0,high0,args=ran[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
+        x[i]=scipy.optimize.brentq(findx_exp,params['brentq_low'],params['brentq_high'],args=ran[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
     return x
 
-def a2bg(size,beta,gamma):#sample radial coordinate from alpha/beta/gamma profile with alpha=2
+def a2bg(size,beta,gamma,**params):#sample radial coordinate from alpha/beta/gamma profile with alpha=2
+    if not 'brentq_low' in params:
+        params['brentq_low']=1.e-10
+    if not 'brentq_high' in params:
+        params['brentq_high']=1.e+10
     ran=np.random.uniform(low=0.,high=1.,size=size)
     def findx_a2bg(arg,rand,beta,gamma):
         return 1-np.sqrt(np.pi)/2*scipy.special.gamma((beta-gamma)/2)/scipy.special.gamma(beta/2)/scipy.special.gamma((3-gamma)/2)*arg**(3-beta)*scipy.special.hyp2f1((beta-3)/2,(beta-gamma)/2,beta/2,-1/arg**2)-rand
     
     x=np.zeros(size,dtype='float')
     for i in range(0,len(ran)):
-        x[i]=scipy.optimize.brentq(findx_a2bg,low0,high0,args=(ran[i],beta,gamma),xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
+        x[i]=scipy.optimize.brentq(findx_a2bg,params['brentq_low'],params['brentq_high'],args=(ran[i],beta,gamma),xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
     return x
 
 def uni(size):#sample radial coordinate from uniform (2D) distribution
@@ -38,8 +46,11 @@ def pl(size,x_min,x_max,alpha):#sample coordinate from power law
     k=(1.-alpha)/(x_max**(1.-alpha)-x_min**(1.-alpha))
     return (x_min**(1.-alpha)+ran*(x_max**(1.-alpha)-x_min**(1.-alpha)))**(1./(1.-alpha)),k
 
-def abg(size,x_min,x_max,alpha,beta,gamma,xbreak):#sample coordinate from alpha/beta/gamma model
-    
+def abg(size,x_min,x_max,alpha,beta,gamma,xbreak,**params):#sample coordinate from alpha/beta/gamma model
+    if not 'brentq_low' in params:
+        params['brentq_low']=1.e-10
+    if not 'brentq_high' in params:
+        params['brentq_high']=1.e+10
     ran=np.random.uniform(low=0.,high=1.,size=size)
 
     a=(1.-gamma)/alpha
@@ -52,12 +63,9 @@ def abg(size,x_min,x_max,alpha,beta,gamma,xbreak):#sample coordinate from alpha/
     def findx(x,uni):
         return  ((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-x**(1.-gamma)*scipy.special.hyp2f1(a,b,c,-x**alpha))/((x_min/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z1)-(x_max/xbreak)**(1.-gamma)*scipy.special.hyp2f1(a,b,c,z2))-uni
 
-    low0=1.e-30
-    high0=1000.
     x=np.zeros(size,dtype=float)
-    
     for i in range(0,len(ran)):
-        x[i]=xbreak*scipy.optimize.brentq(findx,low0,high0,args=ran[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
+        x[i]=xbreak*scipy.optimize.brentq(findx,params['brentq_low'],params['brentq_high'],args=ran[i],xtol=1.e-12,rtol=1.e-6,maxiter=100,full_output=False,disp=True)
     return x,k
 
 def lognormal(size,x_min,x_max,loc,scale):
