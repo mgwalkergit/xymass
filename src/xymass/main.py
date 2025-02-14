@@ -778,3 +778,151 @@ def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
             
     return r2d_binary_blend(r_xy=xy[keep],mag=mag[keep],blend=blend[keep])
 
+def get_n_star(logage,feh,imf,M_V):#for given age, metallicity, M_V and IMF model, use MIST isochrones to return number of stars    
+    import minimint
+    from isochrones.mist import MIST_EvolutionTrack
+    
+    filter_names=['Bessell_V']
+    ii=minimint.Interpolator(filter_names)
+    mist_track=MIST_EvolutionTrack()
+
+    feh_sun=0.0715#solar [Fe/H], fudged so that the isochrone gives solar luminosity
+    logage_sun=np.log10(4.57e+9)
+    M_V_sun=ii(1.,logage_sun,feh_sun)['Bessell_V']
+    Mbol_sun=4.74#absolute bolometric magnitude of sun, assumed by MIST isochrones (confirm by comparing logL and Mbol for star models)
+
+    L_V=10.**((M_V_sun-M_V)/2.5)
+    
+    max_mass=ii.getMaxMass(logage,feh)
+
+    m=np.linspace(0.1,max_mass,10000)
+
+    eep=[]
+    for j in range(0,len(m)):
+        pop=mist_track.generate(m[j],logage,feh,accurate=True)
+        eep.append(pop['eep'][0])
+    eep=np.array(eep)
+
+    m_tams=np.interp(454,eep,m)#mass at terminal-age main sequence
+    m_trgb=np.interp(605,eep,m)#mass at tip of RGB
+    m_zachb=np.interp(631,eep,m)#mass at zero-age core helium burning 
+
+    number_tot,mass_tot,luminosity_tot,luminosity_v_tot=imf_integrate(imf,imf.m_min,imf.m_max,m_tams,m_trgb,m_zachb,logage,feh,ii,Mbol_sun)
+    return L_V*number_tot/luminosity_v_tot
+
+def imf_number_integrand(x,func,logage,feh,ii):
+    return func.func(x)
+
+def imf_mass_integrand(x,func,logage,feh,ii):
+    pop=ii(x,logage,feh)
+    return func.func(x)*pop['mass']
+
+def imf_luminosity_integrand(x,func,logage,feh,ii):
+    pop=ii(x,logage,feh)
+    return func.func(x)*10.**pop['logl']
+
+def imf_lv_integrand(x,func,logage,feh,ii,Mbol_sun):
+    pop=ii(x,logage,feh)
+    l=10.**pop['logl']
+    M_V=pop['Bessell_V']
+    lv=10.**((Mbol_sun-M_V)/2.5)
+    return func.func(x)*lv
+
+def imf_integrate(func,low,high,x_split1,x_split2,x_split3,logage,feh,ii,Mbol_sun):#xsplit is mass where integral is split, for better accuracy over evolved stages
+
+    if x_split1>low:
+        if x_split1<high:
+            I1a=scipy.integrate.quad(imf_number_integrand,low,x_split1,args=(func,logage,feh,ii))
+            I2a=scipy.integrate.quad(imf_mass_integrand,low,x_split1,args=(func,logage,feh,ii))
+            I3a=scipy.integrate.quad(imf_luminosity_integrand,low,x_split1,args=(func,logage,feh,ii))
+            I4a=scipy.integrate.quad(imf_lv_integrand,low,x_split1,args=(func,logage,feh,ii,Mbol_sun))      
+            if x_split2<high:
+                I1b=scipy.integrate.quad(imf_number_integrand,x_split1,x_split2,args=(func,logage,feh,ii))
+                I2b=scipy.integrate.quad(imf_mass_integrand,x_split1,x_split2,args=(func,logage,feh,ii))
+                I3b=scipy.integrate.quad(imf_luminosity_integrand,x_split1,x_split2,args=(func,logage,feh,ii))
+                I4b=scipy.integrate.quad(imf_lv_integrand,x_split1,x_split2,args=(func,logage,feh,ii,Mbol_sun))
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,x_split2,x_split3,args=(func,logage,feh,ii,Mbol_sun))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I2d=scipy.integrate.quad(imf_mass_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I3d=scipy.integrate.quad(imf_luminosity_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I4d=scipy.integrate.quad(imf_lv_integrand,x_split3,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1a[0]+I1b[0]+I1c[0]+I1d[0],I2a[0]+I2b[0]+I2c[0]+I2d[0],I3a[0]+I3b[0]+I3c[0]+I3d[0],I4a[0]+I4b[0]+I4c[0]+I4d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,x_split2,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1a[0]+I1b[0]+I1c[0],I2a[0]+I2b[0]+I2c[0],I3a[0]+I3b[0]+I3c[0],I4a[0]+I4b[0]+I4c[0]
+            else:
+                I1b=scipy.integrate.quad(imf_number_integrand,x_split1,high,args=(func,logage,feh,ii))
+                I2b=scipy.integrate.quad(imf_mass_integrand,x_split1,high,args=(func,logage,feh,ii))
+                I3b=scipy.integrate.quad(imf_luminosity_integrand,x_split1,high,args=(func,logage,feh,ii))
+                I4b=scipy.integrate.quad(imf_lv_integrand,x_split1,high,args=(func,logage,feh,ii,Mbol_sun))      
+                return I1a[0]+I1b[0],I2a[0]+I2b[0],I3a[0]+I3b[0],I4a[0]+I4b[0]
+        else:
+            I1a=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+            I2a=scipy.integrate.quad(imf_mass_integrand,low,high,args=(func,logage,feh,ii))
+            I3a=scipy.integrate.quad(imf_luminosity_integrand,low,high,args=(func,logage,feh,ii))
+            I4a=scipy.integrate.quad(imf_lv_integrand,low,high,args=(func,logage,feh,ii,Mbol_sun))      
+            return I1a[0],I2a[0],I3a[0],I4a[0]
+
+    else:
+        if x_split2>low:
+            if x_split2<high:
+                I1b=scipy.integrate.quad(imf_number_integrand,low,x_split2,args=(func,logage,feh,ii))
+                I2b=scipy.integrate.quad(imf_mass_integrand,low,x_split2,args=(func,logage,feh,ii))
+                I3b=scipy.integrate.quad(imf_luminosity_integrand,low,x_split2,args=(func,logage,feh,ii))
+                I4b=scipy.integrate.quad(imf_lv_integrand,low,x_split2,args=(func,logage,feh,ii,Mbol_sun))
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,x_split2,x_split3,args=(func,logage,feh,ii,Mbol_sun))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I2d=scipy.integrate.quad(imf_mass_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I3d=scipy.integrate.quad(imf_luminosity_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I4d=scipy.integrate.quad(imf_lv_integrand,x_split3,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1b[0]+I1c[0]+I1d[0],I2b[0]+I2c[0]+I2d[0],I3b[0]+I3c[0]+I3d[0],I4b[0]+I4c[0]+I4d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,x_split2,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1b[0]+I1c[0],I2b[0]+I2c[0],I3b[0]+I3c[0],I4b[0]+I4c[0]
+            else:
+                I1b=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                I2b=scipy.integrate.quad(imf_mass_integrand,low,high,args=(func,logage,feh,ii))
+                I3b=scipy.integrate.quad(imf_luminosity_integrand,low,high,args=(func,logage,feh,ii))
+                I4b=scipy.integrate.quad(imf_lv_integrand,low,high,args=(func,logage,feh,ii,Mbol_sun))      
+                return I1b[0],I2b[0],I3b[0],I4b[0]
+            
+        else:
+            if x_split3>low:
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,low,x_split3,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,low,x_split3,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,low,x_split3,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,low,x_split3,args=(func,logage,feh,ii,Mbol_sun))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I2d=scipy.integrate.quad(imf_mass_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I3d=scipy.integrate.quad(imf_luminosity_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    I4d=scipy.integrate.quad(imf_lv_integrand,x_split3,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1c[0]+I1d[0],I2c[0]+I2d[0],I3c[0]+I3d[0],I4c[0]+I4d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                    I2c=scipy.integrate.quad(imf_mass_integrand,low,high,args=(func,logage,feh,ii))
+                    I3c=scipy.integrate.quad(imf_luminosity_integrand,low,high,args=(func,logage,feh,ii))
+                    I4c=scipy.integrate.quad(imf_lv_integrand,low,high,args=(func,logage,feh,ii,Mbol_sun))
+                    return I1c[0],I2c[0],I3c[0],I4c[0]
+            else:
+                I1c=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                I2c=scipy.integrate.quad(imf_mass_integrand,low,high,args=(func,logage,feh,ii))
+                I3c=scipy.integrate.quad(imf_luminosity_integrand,low,high,args=(func,logage,feh,ii))
+                I4c=scipy.integrate.quad(imf_lv_integrand,low,high,args=(func,logage,feh,ii,Mbol_sun))
+                return I1c[0],I2c[0],I3c[0],I4c[0]
+
+            
