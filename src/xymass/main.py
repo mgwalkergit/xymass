@@ -736,7 +736,7 @@ def add_binaries_func(object_xyz,**params):
             companion[j]=-999
             j+=1
             
-    return r2d_with_binaries_func(r_xyz=np.array(r_xyz)*r1.unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),separation_func=params['separation_func'],projected=params['projected'])
+    return r2d_with_binaries_func(r_xyz=np.array(r_xyz)*object_xyz[0].unit,mass=np.array(mass),item=np.array(item),companion=np.array(companion,dtype=int),separation_func=params['separation_func'],projected=params['projected'])
 
 def binary_blend(r2d_wb,mag,Mbol_sun,resolution_limit_physical,**params):
     
