@@ -808,7 +808,7 @@ def get_n_star(logage,feh,imf,M_V):#for given age, metallicity, M_V and IMF mode
     m_zachb=np.interp(631,eep,m)#mass at zero-age core helium burning 
 
     number_tot,mass_tot,luminosity_tot,luminosity_v_tot=imf_integrate(imf,imf.m_min,imf.m_max,m_tams,m_trgb,m_zachb,logage,feh,ii,Mbol_sun)
-    return L_V*number_tot/luminosity_v_tot
+    return number_tot,mass_tot,luminosity_tot,luminosity_v_tot,L_V*number_tot/luminosity_v_tot
 
 def imf_number_integrand(x,func,logage,feh,ii):
     return func.func(x)
