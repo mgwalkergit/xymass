@@ -926,3 +926,53 @@ def imf_integrate(func,low,high,x_split1,x_split2,x_split3,logage,feh,ii,Mbol_su
                 return I1c[0],I2c[0],I3c[0],I4c[0]
 
             
+def imf_integrate0(func,low,high,x_split1,x_split2,x_split3,logage,feh,ii,Mbol_sun):#xsplit is mass where integral is split, for better accuracy over evolved stages
+
+    if x_split1>low:
+        if x_split1<high:
+            I1a=scipy.integrate.quad(imf_number_integrand,low,x_split1,args=(func,logage,feh,ii))
+            if x_split2<high:
+                I1b=scipy.integrate.quad(imf_number_integrand,x_split1,x_split2,args=(func,logage,feh,ii))
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    return I1a[0]+I1b[0]+I1c[0]+I1d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    return I1a[0]+I1b[0]+I1c[0]
+            else:
+                I1b=scipy.integrate.quad(imf_number_integrand,x_split1,high,args=(func,logage,feh,ii))
+                return I1a[0]+I1b[0]
+        else:
+            I1a=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+            return I1a[0]
+
+    else:
+        if x_split2>low:
+            if x_split2<high:
+                I1b=scipy.integrate.quad(imf_number_integrand,low,x_split2,args=(func,logage,feh,ii))
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,x_split3,args=(func,logage,feh,ii))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    return I1b[0]+I1c[0]+I1d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,x_split2,high,args=(func,logage,feh,ii))
+                    return I1b[0]+I1c[0]
+            else:
+                I1b=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                return I1b[0]
+            
+        else:
+            if x_split3>low:
+                if x_split3<high:
+                    I1c=scipy.integrate.quad(imf_number_integrand,low,x_split3,args=(func,logage,feh,ii))
+                    I1d=scipy.integrate.quad(imf_number_integrand,x_split3,high,args=(func,logage,feh,ii))
+                    return I1c[0]+I1d[0]
+                else:
+                    I1c=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                    return I1c[0]
+            else:
+                I1c=scipy.integrate.quad(imf_number_integrand,low,high,args=(func,logage,feh,ii))
+                return I1c[0]
+
+            
