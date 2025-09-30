@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: xymass
-Version: 1.9.7
+Version: 1.9.8
 Summary: package to generate random samples of 2D position and mass from common stellar density and IMF models, including binary companions
 Author-email: "Matthew G. Walker" <mgwalker@cmu.edu>
 Project-URL: Homepage, https://github.com/mgwalkergit/xymass
@@ -15,6 +15,7 @@ Requires-Dist: numpy
 Requires-Dist: scipy
 Requires-Dist: astropy
 Requires-Dist: matplotlib
+Dynamic: license-file
 
 # xymass
 
