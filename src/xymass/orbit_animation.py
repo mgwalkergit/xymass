@@ -183,7 +183,7 @@ def animation_2body_v(sample_orbit,animation_filename):
             if save_animation_to_file:
                 self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=10*len(sample_orbit.r_xyz))
                 writer=animation.FFMpegWriter(fps=60)
-                f=aniation_filename+'.mp4'
+                f=animation_filename+'.mp4'
                 self.ani.save(f,writer=writer)
             else:
                 self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=1*len(sample_orbit.r_xyz))
@@ -353,7 +353,7 @@ def animation_2body_spec(sample_orbit,spec,spec1,spec2,animation_filename):
             if save_animation_to_file:
                 self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=10*len(sample_orbit.r_xyz))
                 writer=animation.FFMpegWriter(fps=60)
-                f=aniation_filename+'.mp4'
+                f=animation_filename+'.mp4'
                 self.ani.save(f,writer=writer)
             else:
                 self.ani = animation.FuncAnimation(self.fig, self.update, interval=5,init_func=self.setup_plot, blit=False,save_count=1*len(sample_orbit.r_xyz))
